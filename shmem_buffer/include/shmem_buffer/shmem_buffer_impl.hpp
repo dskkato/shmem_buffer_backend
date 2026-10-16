@@ -73,7 +73,7 @@ public:
   ShmemBufferImpl(ShmemBufferImpl &&) = delete;
   ShmemBufferImpl & operator=(ShmemBufferImpl &&) = delete;
 
-  std::string get_backend_type() const override {return "shmem_buffer";}
+  std::string get_backend_type() const override {return "shmem";}
   std::size_t size() const override {return size_;}
 
   void resize(std::size_t size)

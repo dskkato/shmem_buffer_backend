@@ -41,10 +41,10 @@ TEST(ShmemBufferBackendTest, MetadataRequiresSamePlatformLocality)
   shmem_buffer::ShmemBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shmem_buffer"] = backend.get_backend_metadata();
+  supported["shmem"] = backend.get_backend_metadata();
   EXPECT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
-  supported["shmem_buffer"] = "different-host:4294967295";
+  supported["shmem"] = "different-host:4294967295";
   EXPECT_FALSE(backend.on_discovering_endpoint(info, {}, supported).first);
 }
 
@@ -53,7 +53,7 @@ TEST(ShmemBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
   shmem_buffer::ShmemBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shmem_buffer"] = backend.get_backend_metadata();
+  supported["shmem"] = backend.get_backend_metadata();
   ASSERT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
   auto buffer = shmem_buffer::allocate_buffer(128);
@@ -119,7 +119,7 @@ TEST(ShmemBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   shmem_buffer::ShmemBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shmem_buffer"] = backend.get_backend_metadata();
+  supported["shmem"] = backend.get_backend_metadata();
   ASSERT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
   auto source = shmem_buffer::allocate_buffer(32);
@@ -186,7 +186,7 @@ TEST(ShmemBufferBackendTest, IncompatiblePeerFallsBack)
   shmem_buffer::ShmemBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shmem_buffer"] = "other-host:1000";
+  supported["shmem"] = "other-host:1000";
   EXPECT_FALSE(backend.on_discovering_endpoint(info, {}, supported).first);
 
   auto buffer = shmem_buffer::allocate_buffer(8);

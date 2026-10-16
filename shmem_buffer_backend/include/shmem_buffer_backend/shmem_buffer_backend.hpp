@@ -38,7 +38,7 @@ public:
   ShmemBufferBackend();
   ~ShmemBufferBackend() override = default;
 
-  std::string get_backend_type() const override {return "shmem_buffer";}
+  std::string get_backend_type() const override {return "shmem";}
 
   std::string get_backend_metadata() const override;
 

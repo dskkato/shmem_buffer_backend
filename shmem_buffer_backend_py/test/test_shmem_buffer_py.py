@@ -28,7 +28,7 @@ def test_allocate_and_write_with_memoryview() -> None:
     buffer = allocate_buffer(16)
 
     assert isinstance(buffer, Buffer)
-    assert buffer.backend_type == 'shmem_buffer'
+    assert buffer.backend_type == 'shmem'
     assert len(buffer) == 16
 
     with write_buffer(buffer) as view:
@@ -68,7 +68,7 @@ def test_ros_message_field_retains_shmem_buffer() -> None:
     message.data = buffer
 
     assert message.data is buffer
-    assert message.data.backend_type == 'shmem_buffer'
+    assert message.data.backend_type == 'shmem'
     view = read_buffer(message.data)
     assert view.tobytes() == b'ros2data'
 

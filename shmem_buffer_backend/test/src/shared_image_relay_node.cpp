@@ -41,7 +41,7 @@ public:
       "output_topic", "test_shmem_buffer_image_dso_relay");
 
     rclcpp::SubscriptionOptions subscription_options;
-    subscription_options.acceptable_buffer_backends = "shmem_buffer";
+    subscription_options.acceptable_buffer_backends = "shmem";
     subscription_ = create_subscription<sensor_msgs::msg::Image>(
       input_topic, 10,
       std::bind(&SharedImageRelay::image_callback, this, std::placeholders::_1),

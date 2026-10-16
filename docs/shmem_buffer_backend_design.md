@@ -33,7 +33,7 @@ flowchart LR
   Sub["Subscriber node"]
 
   Pub -->|"allocate_buffer + from_output_buffer"| Buffer["rosidl::Buffer&lt;uint8_t&gt;"]
-  Buffer -->|"backend = 'shmem_buffer'"| Plugin[shmem_buffer_backend plugin]
+  Buffer -->|"backend = 'shmem'"| Plugin[shmem_buffer_backend plugin]
   Plugin -->|"create_descriptor"| Descriptor["ShmemBufferDescriptor<br/>(pid, block_id, size, socket, ipc_uid)"]
   Descriptor -->|"published over RMW"| Sub
 
@@ -158,7 +158,7 @@ the remote endpoint advertises `shm` with identical metadata.
 
 ```mermaid
 flowchart TB
-  Discover["on_discovering_endpoint(remote)"] --> A{"remote supports 'shmem_buffer'?"}
+  Discover["on_discovering_endpoint(remote)"] --> A{"remote supports 'shmem'?"}
   A -->|no| Fallback[CPU fallback]
   A -->|yes| B{"same host and same euid?"}
   B -->|yes| Use[Use shared-memory sharing]

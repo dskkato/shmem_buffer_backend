@@ -1,7 +1,7 @@
 <!-- Copyright 2026 Daisuke Kato
      Licensed under the Apache License, Version 2.0 -->
 <library path="shmem_buffer_backend">
-  <class name="shmem_buffer"
+  <class name="shmem"
          type="shmem_buffer::ShmemBufferBackend"
          base_class_type="rosidl::BufferBackend">
     <description>Shared-memory backend for buffer serialization</description>

@@ -78,7 +78,7 @@ std::pair<bool, std::vector<std::set<std::uint32_t>>> ShmemBufferBackend::on_dis
 {
   (void)existing_endpoints;
 
-  const auto it = endpoint_supported_backends.find("shmem_buffer");
+  const auto it = endpoint_supported_backends.find("shmem");
   const bool is_compatible =
     it != endpoint_supported_backends.end() && it->second == get_backend_metadata();
   {
