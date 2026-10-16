@@ -39,7 +39,7 @@ flowchart LR
 
   Plugin -.->|"shared-memory allocations"| Pool[ShmemBufferMemoryPool]
   Plugin -.->|"platform IPC transport"| Broker[ShmemBufferFdBroker]
-  Pool -.->|"shared control header"| Control["readers / uid / timestamp"]
+  Pool -.->|"shared-memory control header"| Control["readers / uid / timestamp"]
 ```
 
 The implementation is divided into four responsibilities:
@@ -109,7 +109,7 @@ not weaken stale-message detection.
 
 ## Forwarding an imported buffer
 
-A relay can subscribe to a shared-buffer-backed message, construct another
+A relay can subscribe to a shared-memory-backed message, construct another
 message instance, and publish it without copying its payload. The relay's
 buffer is an imported view, not a block in the relay process's
 `ShmemBufferMemoryPool`:
@@ -340,14 +340,14 @@ they do not tell the publisher whether a subscriber is still reading before
 the next publication. The count and reuse claim therefore protect against concurrent reuse,
 while the memfd reference count handles final object cleanup.
 
-## Shared buffer state machine
+## Shared-memory buffer state machine
 
 The write lifecycle and local access exclusion are tracked by process-local
 state in `ShmemBufferImpl`. This state is not stored in the shared memfd
 control header and is never observed by the subscriber. Its purpose is to
 ensure that the backend cannot create a descriptor before the write is
 finalized, and that a local writer and local readers do not access the payload
-at the same time. The shared control header has a separate reader count for
+at the same time. The shared-memory control header has a separate reader count for
 protecting pool-block reuse across processes; the process-local reader count
 in `HandleState` protects only access through this `ShmemBuffer` instance.
 Finalization may happen explicitly during descriptor creation while a

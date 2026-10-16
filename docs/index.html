@@ -323,7 +323,7 @@ process(image)</code></pre>
 
       <div class="notes-grid">
         <article class="note reveal"><span>i</span><div><strong>read view の lifetime は自動管理</strong><p>read lease は派生した NumPy array / memoryview に保持され、最後の view が破棄された時に自動で解放されます。write view は <code>with</code> の scope 内だけで使用してください。</p></div></article>
-        <article class="note reveal"><span>i</span><div><strong>受信側の CPU buffer も読める</strong><p><code>from_input_buffer()</code> / <code>read_buffer()</code> は非 shared buffer を同期 copy で promote できます。この場合は inter-process zero-copy ではありません。</p></div></article>
+        <article class="note reveal"><span>i</span><div><strong>受信側の CPU buffer も読める</strong><p><code>from_input_buffer()</code> / <code>read_buffer()</code> は CPU buffer を同期 copy で shared-memory buffer に promote できます。この場合は inter-process zero-copy ではありません。</p></div></article>
       </div>
     </section>
 

@@ -179,12 +179,12 @@ std::unique_ptr<void, void (*)(void *)> ShmemBufferBackend::from_descriptor_with
 {
   (void)endpoint_info;
   if (descriptor_ptr == nullptr) {
-    throw std::runtime_error("null shared-buffer descriptor");
+    throw std::runtime_error("null shared-memory descriptor");
   }
   const auto & descriptor =
     *static_cast<const shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor *>(descriptor_ptr);
   if (descriptor.element_type_name != typeid(std::uint8_t).name()) {
-    throw std::runtime_error("shared-buffer descriptor element type mismatch");
+    throw std::runtime_error("shared-memory descriptor element type mismatch");
   }
   if (
     descriptor.shmem_buffer_pid <= 0 || descriptor.shmem_buffer_socket_path.empty() ||
@@ -192,7 +192,7 @@ std::unique_ptr<void, void (*)(void *)> ShmemBufferBackend::from_descriptor_with
     descriptor.shmem_buffer_block_size < kShmemBufferPayloadOffset ||
     descriptor.size > descriptor.shmem_buffer_block_size - kShmemBufferPayloadOffset)
   {
-    throw std::runtime_error("invalid shared-buffer descriptor metadata");
+    throw std::runtime_error("invalid shared-memory descriptor metadata");
   }
 
   auto imported = ShmemBufferHandleCache::import_block(
@@ -202,7 +202,7 @@ std::unique_ptr<void, void (*)(void *)> ShmemBufferBackend::from_descriptor_with
   imported->acquire_reader();
   if (imported->control()->ipc_uid.load(std::memory_order_acquire) != descriptor.ipc_uid) {
     imported->release_reader();
-    throw std::runtime_error("stale shared-buffer descriptor raced with block reuse");
+    throw std::runtime_error("stale shared-memory descriptor raced with block reuse");
   }
 
   auto reader_release = [imported](std::uint8_t *) {imported->release_reader();};

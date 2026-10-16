@@ -79,7 +79,8 @@ def read_buffer(buffer: Buffer) -> memoryview:
     Return a read-only view whose lifetime owns the native read lease.
 
     Access to a shared-memory-backed buffer is zero-copy. Other backends follow the
-    C++ shared-buffer promotion path and may copy into a temporary shared-memory allocation.
+    C++ path for promoting a buffer to shared memory and may copy into a temporary
+    shared-memory allocation.
     The lease remains alive through derived buffer objects such as NumPy arrays and is
     released automatically after the last view is destroyed.
     """

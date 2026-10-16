@@ -64,7 +64,7 @@ struct alignas(64) ShmemBufferControlHeader
 };
 static_assert(
   sizeof(ShmemBufferControlHeader) <= kShmemBufferPayloadOffset,
-  "shared-buffer control metadata must fit before the fixed payload offset");
+  "shared-memory control metadata must fit before the fixed payload offset");
 
 inline bool try_acquire_shmem_buffer_reader(ShmemBufferControlHeader * control)
 {
@@ -114,16 +114,16 @@ inline void release_shmem_buffer_reuse_claim(ShmemBufferControlHeader * control)
 
 static_assert(
   sizeof(ShmemBufferControlHeader) <= kShmemBufferPayloadOffset,
-  "shared-buffer control metadata must fit before the fixed payload offset");
+  "shared-memory control metadata must fit before the fixed payload offset");
 static_assert(
   kShmemBufferPayloadOffset % alignof(ShmemBufferControlHeader) == 0,
-  "shared-buffer payload offset must preserve control-header alignment");
+  "shared-memory payload offset must preserve control-header alignment");
 static_assert(
   std::atomic<std::uint64_t>::is_always_lock_free,
-  "shared-buffer control metadata requires lock-free uint64 atomics");
+  "shared-memory control metadata requires lock-free uint64 atomics");
 static_assert(
   std::atomic<std::uint32_t>::is_always_lock_free,
-  "shared-buffer control metadata requires lock-free uint32 atomics");
+  "shared-memory control metadata requires lock-free uint32 atomics");
 
 /// Publisher-side allocation and its stable physical identity.
 struct ShmemBufferBlock

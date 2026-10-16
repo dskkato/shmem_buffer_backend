@@ -196,7 +196,7 @@ struct WriteBufferCallbacks
         py::cast<NativeWriteAccess &>(py::handle(object)).add_export();
       } catch (...) {
         original_releasebuffer(object, view);
-        PyErr_SetString(PyExc_BufferError, "failed to retain shared-buffer export");
+        PyErr_SetString(PyExc_BufferError, "failed to retain shared-memory export");
         return -1;
       }
     }

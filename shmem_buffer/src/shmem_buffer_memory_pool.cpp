@@ -60,7 +60,7 @@ ShmemBufferMemoryPool::~ShmemBufferMemoryPool()
 ShmemBufferBlock * ShmemBufferMemoryPool::allocate(std::size_t payload_size)
 {
   if (payload_size == 0) {
-    throw std::invalid_argument("shared buffer pool cannot allocate a zero-size block");
+    throw std::invalid_argument("shared-memory buffer pool cannot allocate a zero-size block");
   }
 
   std::lock_guard<std::mutex> lock(mutex_);
@@ -197,7 +197,7 @@ bool ShmemBufferMemoryPool::try_claim_block(ShmemBufferBlock * block) const
 ShmemBufferBlock * ShmemBufferMemoryPool::create_block(std::size_t payload_size)
 {
   if (payload_size > std::numeric_limits<std::size_t>::max() - kShmemBufferPayloadOffset) {
-    throw std::length_error("shared buffer mapping size overflows size_t");
+    throw std::length_error("shared-memory buffer mapping size overflows size_t");
   }
   const std::size_t mapped_size = kShmemBufferPayloadOffset + payload_size;
   const std::uint32_t block_id = next_block_id_++;

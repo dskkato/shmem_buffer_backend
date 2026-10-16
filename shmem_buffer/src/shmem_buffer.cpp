@@ -28,7 +28,7 @@ std::shared_ptr<void> make_lease(ShmemBufferControlHeader * control)
     return {};
   }
   if (!try_acquire_shmem_buffer_reader(control)) {
-    throw std::runtime_error("shared buffer block is being reused");
+    throw std::runtime_error("shared-memory buffer block is being reused");
   }
   return std::shared_ptr<void>(control, [](void * ptr) {
              auto * header = static_cast<ShmemBufferControlHeader *>(ptr);
@@ -242,23 +242,23 @@ ReadHandle ShmemBuffer::get_read_handle() const
 WriteHandle ShmemBuffer::get_write_handle()
 {
   if (!writable_) {
-    throw std::runtime_error("cannot acquire a write handle for a read-only shared buffer");
+    throw std::runtime_error("cannot acquire a write handle for a read-only shared-memory buffer");
   }
   if (data_ptr_ == nullptr || size_ == 0) {
-    throw std::runtime_error("cannot acquire a write handle for an empty shared buffer");
+    throw std::runtime_error("cannot acquire a write handle for an empty shared-memory buffer");
   }
   if (handle_state_ == nullptr) {
     handle_state_ = std::make_shared<HandleState>();
   }
   std::lock_guard<std::mutex> lock(handle_state_->mutex);
   if (handle_state_->state == HandleState::State::InUse) {
-    throw std::runtime_error("shared buffer write handle already in use");
+    throw std::runtime_error("shared-memory buffer write handle already in use");
   }
   if (handle_state_->state == HandleState::State::Finalized) {
-    throw std::runtime_error("shared buffer write has already been finalized");
+    throw std::runtime_error("shared-memory buffer write has already been finalized");
   }
   if (handle_state_->active_readers != 0) {
-    throw std::runtime_error("shared buffer read handle already in use");
+    throw std::runtime_error("shared-memory buffer read handle already in use");
   }
   handle_state_->state = HandleState::State::InUse;
   return WriteHandle(data_ptr_, handle_state_, owner_);

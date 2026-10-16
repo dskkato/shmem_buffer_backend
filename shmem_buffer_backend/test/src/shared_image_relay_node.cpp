@@ -25,7 +25,7 @@
 #include "rclcpp_components/register_node_macro.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-/// A zero-copy forwarding node: it subscribes to a shared-buffer-backed image,
+/// A zero-copy forwarding node: it subscribes to a shared-memory-backed image,
 /// creates a new Image message, and moves the data buffer into it. The backend
 /// serializes the imported buffer's original IPC descriptor instead of copying
 /// the payload.

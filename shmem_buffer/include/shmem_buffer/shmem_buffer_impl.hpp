@@ -140,7 +140,7 @@ private:
   static std::size_t byte_count(std::size_t count)
   {
     if (count > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
-      throw ShmemBufferError("shared buffer size overflows size_t");
+      throw ShmemBufferError("shared-memory buffer size overflows size_t");
     }
     return count * sizeof(T);
   }

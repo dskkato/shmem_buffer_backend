@@ -30,7 +30,7 @@ namespace shmem_buffer
 
 /// \brief Allocate a fresh shared-memory-backed \c rosidl::Buffer<std::uint8_t>.
 ///
-/// \details Allocates \p count payload bytes from the shared buffer memory pool.
+/// \details Allocates \p count payload bytes from the shared-memory pool.
 /// The returned buffer owns the allocation. This function does not initialize or
 /// copy payload data. The caller is responsible to assign the buffer to a message
 /// field (e.g. `msg.data = allocate_buffer(n)` for messages that follow the `data`
