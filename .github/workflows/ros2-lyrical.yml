@@ -23,7 +23,7 @@ jobs:
         with:
           package-name: |
             shmem_buffer_backend_msgs
-            shared_buffer
+            shmem_buffer
             shmem_buffer_backend_py
             shmem_buffer_backend
           target-ros2-distro: lyrical

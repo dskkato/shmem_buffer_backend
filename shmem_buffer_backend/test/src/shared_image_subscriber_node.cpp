@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "shared_buffer/shared_buffer_api.hpp"
+#include "shmem_buffer/shmem_buffer_api.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
@@ -39,16 +39,16 @@ public:
   : Node("shared_image_subscriber", options)
   {
     const auto input_topic = declare_parameter<std::string>(
-      "input_topic", "test_shared_buffer_image_dso");
+      "input_topic", "test_shmem_buffer_image_dso");
     const auto result_prefix = declare_parameter<std::string>(
-      "result_prefix", "shared_buffer_dso");
+      "result_prefix", "shmem_buffer_dso");
     frame_id_prefix_ = declare_parameter<std::string>(
-      "frame_id_prefix", "shared_buffer_pool_dso_");
+      "frame_id_prefix", "shmem_buffer_pool_dso_");
 
     rclcpp::SubscriptionOptions subscription_options;
     // Reject CPU fallback at endpoint matching time.  The test must fail if
     // descriptor creation in the publisher process did not find its block.
-    subscription_options.acceptable_buffer_backends = "shared_buffer";
+    subscription_options.acceptable_buffer_backends = "shmem_buffer";
     subscription_ = create_subscription<sensor_msgs::msg::Image>(
       input_topic, 10,
       std::bind(&SharedImageSubscriber::image_callback, this, std::placeholders::_1),
@@ -81,13 +81,13 @@ private:
     metadata_valid = metadata_valid && msg->encoding == "mono8" && msg->step == 256u;
     metadata_valid = metadata_valid && msg->data.size() == 4096u;
 
-    const bool backend_valid = msg->data.get_backend_type() == "shared_buffer";
+    const bool backend_valid = msg->data.get_backend_type() == "shmem_buffer";
     bool content_valid = false;
     try {
       // Check the backend before acquiring the handle so CPU fallback cannot
-      // be silently promoted back to shared_buffer by from_input_buffer().
+      // be silently promoted back to shmem_buffer by from_input_buffer().
       if (backend_valid) {
-        const auto read = shared_buffer::from_input_buffer(msg->data);
+        const auto read = shmem_buffer::from_input_buffer(msg->data);
         std::vector<std::uint8_t> data(msg->data.size());
         std::memcpy(data.data(), read.get_ptr(), data.size());
         const auto expected = pattern_for(received_count_);
@@ -100,7 +100,7 @@ private:
         }
       }
     } catch (const std::exception & exception) {
-      RCLCPP_ERROR(get_logger(), "Failed to read shared_buffer payload: %s", exception.what());
+      RCLCPP_ERROR(get_logger(), "Failed to read shmem_buffer payload: %s", exception.what());
     }
 
     const bool message_valid = metadata_valid && backend_valid && content_valid;
@@ -131,7 +131,7 @@ private:
     metadata_publisher_->publish(metadata);
 
     if (!valid) {
-      RCLCPP_ERROR(get_logger(), "Invalid shared_buffer image #%u", received_count_);
+      RCLCPP_ERROR(get_logger(), "Invalid shmem_buffer image #%u", received_count_);
     }
   }
 

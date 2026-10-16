@@ -10,7 +10,7 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>shared_buffer</depend>
+  <depend>shmem_buffer</depend>
   <depend>shmem_buffer_backend_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rcutils</depend>

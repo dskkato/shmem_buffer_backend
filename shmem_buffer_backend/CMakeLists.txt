@@ -37,11 +37,11 @@ target_link_libraries(${PROJECT_NAME}
   rosidl_buffer_backend_registry::rosidl_buffer_backend_registry
   rosidl_typesupport_cpp::rosidl_typesupport_cpp
   pluginlib::pluginlib
-  shared_buffer::shared_buffer
+  shmem_buffer::shmem_buffer
   rcutils::rcutils
 )
 
-pluginlib_export_plugin_description_file(rosidl_buffer_backend shared_buffer_plugin.xml)
+pluginlib_export_plugin_description_file(rosidl_buffer_backend shmem_buffer_plugin.xml)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -61,7 +61,7 @@ if(BUILD_TESTING)
   if(TARGET test_shmem_buffer_backend)
     target_link_libraries(test_shmem_buffer_backend
       ${PROJECT_NAME}
-      shared_buffer::shared_buffer
+      shmem_buffer::shmem_buffer
       ${shmem_buffer_backend_msgs_TARGETS}
       rosidl_buffer_backend::rosidl_buffer_backend
       rosidl_runtime_cpp::rosidl_runtime_cpp
@@ -78,7 +78,7 @@ if(BUILD_TESTING)
     VISIBILITY_INLINES_HIDDEN YES
   )
   target_link_libraries(shared_image_dso_publisher_component
-    shared_buffer::shared_buffer
+    shmem_buffer::shmem_buffer
     rclcpp::rclcpp
     rclcpp_components::component
     ${sensor_msgs_TARGETS}
@@ -92,7 +92,7 @@ if(BUILD_TESTING)
     test/src/shared_image_subscriber_node.cpp
   )
   target_link_libraries(shared_image_subscriber_component
-    shared_buffer::shared_buffer
+    shmem_buffer::shmem_buffer
     rclcpp::rclcpp
     rclcpp_components::component
     ${sensor_msgs_TARGETS}
@@ -107,7 +107,7 @@ if(BUILD_TESTING)
     test/src/shared_image_relay_node.cpp
   )
   target_link_libraries(shared_image_relay_component
-    shared_buffer::shared_buffer
+    shmem_buffer::shmem_buffer
     rclcpp::rclcpp
     rclcpp_components::component
     ${sensor_msgs_TARGETS}
@@ -116,8 +116,8 @@ if(BUILD_TESTING)
   rclcpp_components_register_nodes(shared_image_relay_component
     "SharedImageRelay")
 
-  add_launch_test(test/test_shared_buffer_pool_dso_fastrtps_launch.py
-    TARGET test_shared_buffer_pool_dso_fastrtps_launch
+  add_launch_test(test/test_shmem_buffer_pool_dso_fastrtps_launch.py
+    TARGET test_shmem_buffer_pool_dso_fastrtps_launch
     TIMEOUT 45
     ENV "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_log"
   )

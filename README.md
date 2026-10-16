@@ -17,22 +17,22 @@ implementation.
 
 ## Packages
 
-- `shared_buffer`: shared-memory allocation, pooling, handles, Linux FD
+- `shmem_buffer`: shared-memory allocation, pooling, handles, Linux FD
   brokering, and Windows named-mapping import.
 - `shmem_buffer_backend_py`: Python zero-copy bindings for the shared-memory backend
-  (installs the `shared_buffer` Python module).
+  (installs the `shmem_buffer` Python module).
 - `shmem_buffer_backend`: rosidl buffer backend plugin.
 - `shmem_buffer_backend_msgs`: descriptor message used for inter-process import.
 
 ## Python zero-copy access
 
 The `shmem_buffer_backend_py` package exposes Python buffer-protocol access
-through the `shared_buffer` Python module. NumPy is optional and consumes the
+through the `shmem_buffer` Python module. NumPy is optional and consumes the
 standard `memoryview` without copying:
 
 ```python
 import numpy as np
-from shared_buffer import allocate_buffer, read_buffer, write_buffer
+from shmem_buffer import allocate_buffer, read_buffer, write_buffer
 
 buffer = allocate_buffer(1024)
 with write_buffer(buffer) as view:

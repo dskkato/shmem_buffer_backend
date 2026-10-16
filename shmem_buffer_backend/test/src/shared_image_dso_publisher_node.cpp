@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "shared_buffer/shared_buffer_api.hpp"
+#include "shmem_buffer/shmem_buffer_api.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/publisher.hpp"
@@ -31,10 +31,10 @@ class SharedImageDsoPublisher : public rclcpp::Node
 {
 public:
   explicit SharedImageDsoPublisher(const rclcpp::NodeOptions & options)
-  : Node("shared_buffer_image_dso_publisher", options)
+  : Node("shmem_buffer_image_dso_publisher", options)
   {
     published_messages_.reserve(kMessages);
-    publisher_ = create_publisher<sensor_msgs::msg::Image>("test_shared_buffer_image_dso", 10);
+    publisher_ = create_publisher<sensor_msgs::msg::Image>("test_shmem_buffer_image_dso", 10);
     timer_ = create_wall_timer(
       std::chrono::milliseconds(100),
       std::bind(&SharedImageDsoPublisher::publish_next, this));
@@ -64,16 +64,16 @@ private:
 
     sensor_msgs::msg::Image msg;
     msg.header.stamp = now();
-    msg.header.frame_id = "shared_buffer_pool_dso_" + std::to_string(sequence);
+    msg.header.frame_id = "shmem_buffer_pool_dso_" + std::to_string(sequence);
     msg.height = 16;
     msg.width = 256;
     msg.encoding = "mono8";
     msg.is_bigendian = 0;
     msg.step = 256;
-    msg.data = shared_buffer::allocate_buffer(kPayloadSize);
+    msg.data = shmem_buffer::allocate_buffer(kPayloadSize);
 
     {
-      auto write = shared_buffer::from_output_buffer(msg.data);
+      auto write = shmem_buffer::from_output_buffer(msg.data);
       for (std::size_t i = 0; i < kPayloadSize; ++i) {
         write.get_ptr()[i] = pattern;
       }

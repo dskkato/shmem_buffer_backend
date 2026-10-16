@@ -21,10 +21,10 @@
 #include <thread>
 #include <unordered_map>
 
-#include "shared_buffer/shared_buffer_api.hpp"
-#include "shared_buffer/shared_buffer_impl.hpp"
+#include "shmem_buffer/shmem_buffer_api.hpp"
+#include "shmem_buffer/shmem_buffer_impl.hpp"
 #include "shmem_buffer_backend/shmem_buffer_backend.hpp"
-#include "shmem_buffer_backend_msgs/msg/shared_buffer_descriptor.hpp"
+#include "shmem_buffer_backend_msgs/msg/shmem_buffer_descriptor.hpp"
 
 namespace
 {
@@ -38,27 +38,27 @@ rmw_topic_endpoint_info_t endpoint()
 
 TEST(SharedBufferBackendTest, MetadataRequiresSamePlatformLocality)
 {
-  shared_buffer::SharedBufferBackend backend;
+  shmem_buffer::SharedBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shared_buffer"] = backend.get_backend_metadata();
+  supported["shmem_buffer"] = backend.get_backend_metadata();
   EXPECT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
-  supported["shared_buffer"] = "different-host:4294967295";
+  supported["shmem_buffer"] = "different-host:4294967295";
   EXPECT_FALSE(backend.on_discovering_endpoint(info, {}, supported).first);
 }
 
 TEST(SharedBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
 {
-  shared_buffer::SharedBufferBackend backend;
+  shmem_buffer::SharedBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shared_buffer"] = backend.get_backend_metadata();
+  supported["shmem_buffer"] = backend.get_backend_metadata();
   ASSERT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
-  auto buffer = shared_buffer::allocate_buffer(128);
+  auto buffer = shmem_buffer::allocate_buffer(128);
   {
-    auto write = shared_buffer::from_output_buffer(buffer);
+    auto write = shmem_buffer::from_output_buffer(buffer);
     for (std::size_t i = 0; i < buffer.size(); ++i) {
       write.get_ptr()[i] = static_cast<std::uint8_t>(i ^ 0x5A);
     }
@@ -67,27 +67,27 @@ TEST(SharedBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
   auto descriptor = backend.create_descriptor_with_endpoint(buffer.get_impl(), info);
   ASSERT_NE(nullptr, descriptor);
   const auto * typed_descriptor =
-    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(descriptor.get());
+    static_cast<const shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor *>(descriptor.get());
   ASSERT_EQ(128u, typed_descriptor->size);
   ASSERT_NE(0u, typed_descriptor->ipc_uid);
 #ifdef _WIN32
   EXPECT_EQ(0u,
-      typed_descriptor->shared_buffer_socket_path.rfind("Local\\rosidl_shared_buffer_", 0));
+      typed_descriptor->shmem_buffer_socket_path.rfind("Local\\rosidl_shmem_buffer_", 0));
 #else
-  EXPECT_EQ(0u, typed_descriptor->shared_buffer_socket_path.rfind("/tmp/shared_buffer_", 0));
+  EXPECT_EQ(0u, typed_descriptor->shmem_buffer_socket_path.rfind("/tmp/shmem_buffer_", 0));
 #endif
   EXPECT_EQ(
-    shared_buffer::kSharedBufferPayloadOffset + typed_descriptor->size,
-    typed_descriptor->shared_buffer_block_size);
+    shmem_buffer::kSharedBufferPayloadOffset + typed_descriptor->size,
+    typed_descriptor->shmem_buffer_block_size);
 
   auto imported = backend.from_descriptor_with_endpoint(descriptor.get(), info);
   ASSERT_NE(nullptr, imported.get());
   auto * imported_base = static_cast<rosidl::BufferImplBase<std::uint8_t> *>(imported.get());
   auto * imported_impl =
-    dynamic_cast<shared_buffer::SharedBufferImpl<std::uint8_t> *>(imported_base);
+    dynamic_cast<shmem_buffer::SharedBufferImpl<std::uint8_t> *>(imported_base);
   ASSERT_NE(nullptr, imported_impl);
-  EXPECT_FALSE(imported_impl->get_shared_buffer().writable());
-  EXPECT_THROW(imported_impl->get_shared_buffer().get_write_handle(), std::runtime_error);
+  EXPECT_FALSE(imported_impl->get_shmem_buffer().writable());
+  EXPECT_THROW(imported_impl->get_shmem_buffer().get_write_handle(), std::runtime_error);
   auto first_copy = imported_impl->to_cpu();
   auto * first_cpu = dynamic_cast<rosidl::CpuBufferImpl<std::uint8_t> *>(first_copy.get());
   ASSERT_NE(nullptr, first_cpu);
@@ -101,7 +101,7 @@ TEST(SharedBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
   auto * imported_again_base =
     static_cast<rosidl::BufferImplBase<std::uint8_t> *>(imported_again.get());
   auto * imported_again_impl =
-    dynamic_cast<shared_buffer::SharedBufferImpl<std::uint8_t> *>(imported_again_base);
+    dynamic_cast<shmem_buffer::SharedBufferImpl<std::uint8_t> *>(imported_again_base);
   ASSERT_NE(nullptr, imported_again_impl);
   auto second_copy = imported_again_impl->to_cpu();
   auto * second_cpu = dynamic_cast<rosidl::CpuBufferImpl<std::uint8_t> *>(second_copy.get());
@@ -116,15 +116,15 @@ TEST(SharedBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
 
 TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
 {
-  shared_buffer::SharedBufferBackend backend;
+  shmem_buffer::SharedBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shared_buffer"] = backend.get_backend_metadata();
+  supported["shmem_buffer"] = backend.get_backend_metadata();
   ASSERT_TRUE(backend.on_discovering_endpoint(info, {}, supported).first);
 
-  auto source = shared_buffer::allocate_buffer(32);
+  auto source = shmem_buffer::allocate_buffer(32);
   {
-    auto write = shared_buffer::from_output_buffer(source);
+    auto write = shmem_buffer::from_output_buffer(source);
     for (std::size_t i = 0; i < source.size(); ++i) {
       write.get_ptr()[i] = static_cast<std::uint8_t>(0xC0u + i);
     }
@@ -133,14 +133,14 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   auto source_descriptor = backend.create_descriptor_with_endpoint(source.get_impl(), info);
   ASSERT_NE(nullptr, source_descriptor);
   const auto * source_typed =
-    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
+    static_cast<const shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor *>(
     source_descriptor.get());
 
   auto imported = backend.from_descriptor_with_endpoint(source_descriptor.get(), info);
-  auto * imported_impl = dynamic_cast<shared_buffer::SharedBufferImpl<std::uint8_t> *>(
+  auto * imported_impl = dynamic_cast<shmem_buffer::SharedBufferImpl<std::uint8_t> *>(
     static_cast<rosidl::BufferImplBase<std::uint8_t> *>(imported.get()));
   ASSERT_NE(nullptr, imported_impl);
-  auto * control = imported_impl->get_shared_buffer().control();
+  auto * control = imported_impl->get_shmem_buffer().control();
   ASSERT_NE(nullptr, control);
   EXPECT_EQ(1u, control->reader_state.load(std::memory_order_acquire));
   const auto published_before =
@@ -151,12 +151,12 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   auto forwarded = backend.create_descriptor_with_endpoint(imported_impl, info);
   ASSERT_NE(nullptr, forwarded);
   const auto * forwarded_typed =
-    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
+    static_cast<const shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor *>(
     forwarded.get());
-  EXPECT_EQ(source_typed->shared_buffer_pid, forwarded_typed->shared_buffer_pid);
-  EXPECT_EQ(source_typed->shared_buffer_block_id, forwarded_typed->shared_buffer_block_id);
-  EXPECT_EQ(source_typed->shared_buffer_block_size, forwarded_typed->shared_buffer_block_size);
-  EXPECT_EQ(source_typed->shared_buffer_socket_path, forwarded_typed->shared_buffer_socket_path);
+  EXPECT_EQ(source_typed->shmem_buffer_pid, forwarded_typed->shmem_buffer_pid);
+  EXPECT_EQ(source_typed->shmem_buffer_block_id, forwarded_typed->shmem_buffer_block_id);
+  EXPECT_EQ(source_typed->shmem_buffer_block_size, forwarded_typed->shmem_buffer_block_size);
+  EXPECT_EQ(source_typed->shmem_buffer_socket_path, forwarded_typed->shmem_buffer_socket_path);
   EXPECT_EQ(source_typed->ipc_uid, forwarded_typed->ipc_uid);
   EXPECT_GT(
     control->publish_timestamp_us.load(std::memory_order_acquire), published_before);
@@ -166,7 +166,7 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   // cannot be claimed for reuse while the forwarded descriptor is consumed.
   auto downstream = backend.from_descriptor_with_endpoint(forwarded.get(), info);
   auto * downstream_impl =
-    dynamic_cast<shared_buffer::SharedBufferImpl<std::uint8_t> *>(
+    dynamic_cast<shmem_buffer::SharedBufferImpl<std::uint8_t> *>(
     static_cast<rosidl::BufferImplBase<std::uint8_t> *>(downstream.get()));
   ASSERT_NE(nullptr, downstream_impl);
   EXPECT_EQ(2u, control->reader_state.load(std::memory_order_acquire));
@@ -183,13 +183,13 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
 
 TEST(SharedBufferBackendTest, IncompatiblePeerFallsBack)
 {
-  shared_buffer::SharedBufferBackend backend;
+  shmem_buffer::SharedBufferBackend backend;
   const auto info = endpoint();
   std::unordered_map<std::string, std::string> supported;
-  supported["shared_buffer"] = "other-host:1000";
+  supported["shmem_buffer"] = "other-host:1000";
   EXPECT_FALSE(backend.on_discovering_endpoint(info, {}, supported).first);
 
-  auto buffer = shared_buffer::allocate_buffer(8);
+  auto buffer = shmem_buffer::allocate_buffer(8);
   EXPECT_EQ(nullptr, backend.create_descriptor_with_endpoint(buffer.get_impl(), info));
 }
 

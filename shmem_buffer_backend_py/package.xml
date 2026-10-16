@@ -11,7 +11,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <depend>shared_buffer</depend>
+  <depend>shmem_buffer</depend>
   <depend>pybind11-dev</depend>
   <depend>python3-dev</depend>
   <depend>rosidl_buffer</depend>

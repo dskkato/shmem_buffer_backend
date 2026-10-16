@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SHARED_BUFFER_BACKEND__SHARED_BUFFER_BACKEND_HPP_
-#define SHARED_BUFFER_BACKEND__SHARED_BUFFER_BACKEND_HPP_
+#ifndef SHMEM_BUFFER_BACKEND__SHMEM_BUFFER_BACKEND_HPP_
+#define SHMEM_BUFFER_BACKEND__SHMEM_BUFFER_BACKEND_HPP_
 
 #include <algorithm>
 #include <array>
@@ -26,10 +26,10 @@
 #include <utility>
 #include <vector>
 
-#include "shared_buffer/host_endpoint_manager.hpp"
+#include "shmem_buffer/host_endpoint_manager.hpp"
 #include "rosidl_buffer_backend/buffer_backend.hpp"
 
-namespace shared_buffer
+namespace shmem_buffer
 {
 
 class SharedBufferBackend : public rosidl::BufferBackend
@@ -38,7 +38,7 @@ public:
   SharedBufferBackend();
   ~SharedBufferBackend() override = default;
 
-  std::string get_backend_type() const override {return "shared_buffer";}
+  std::string get_backend_type() const override {return "shmem_buffer";}
 
   std::string get_backend_metadata() const override;
 
@@ -92,6 +92,6 @@ private:
   mutable std::mutex compatibility_mutex_;
 };
 
-}  // namespace shared_buffer
+}  // namespace shmem_buffer
 
-#endif  // SHARED_BUFFER_BACKEND__SHARED_BUFFER_BACKEND_HPP_
+#endif  // SHMEM_BUFFER_BACKEND__SHMEM_BUFFER_BACKEND_HPP_

@@ -19,26 +19,25 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
-find_package(shared_buffer REQUIRED)
+find_package(shmem_buffer REQUIRED)
 find_package(rosidl_buffer REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
-pybind11_add_module(_shared_buffer_py
-  src/shared_buffer_py.cpp
+pybind11_add_module(_shmem_buffer_py
+  src/shmem_buffer_py.cpp
 )
-target_link_libraries(_shared_buffer_py PRIVATE
-  shared_buffer::shared_buffer
+target_link_libraries(_shmem_buffer_py PRIVATE
+  shmem_buffer::shmem_buffer
   rosidl_buffer::rosidl_buffer
 )
 
-# Keep the public Python module name stable while moving its ROS package out of
-# the core C++ package.
-ament_python_install_package(shared_buffer)
+# Install the Python module provided by this ROS package.
+ament_python_install_package(shmem_buffer)
 
-install(TARGETS _shared_buffer_py
-  LIBRARY DESTINATION "${PYTHON_INSTALL_DIR}/shared_buffer"
-  RUNTIME DESTINATION "${PYTHON_INSTALL_DIR}/shared_buffer"
+install(TARGETS _shmem_buffer_py
+  LIBRARY DESTINATION "${PYTHON_INSTALL_DIR}/shmem_buffer"
+  RUNTIME DESTINATION "${PYTHON_INSTALL_DIR}/shmem_buffer"
 )
 
 if(BUILD_TESTING)
@@ -48,13 +47,13 @@ if(BUILD_TESTING)
 
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_pytest_test(test_shared_buffer_py
-    test/test_shared_buffer_py.py
+  ament_add_pytest_test(test_shmem_buffer_py
+    test/test_shmem_buffer_py.py
     # This is a standalone pytest test. Avoid loading unrelated ROS pytest
     # plugins, whose launch_testing hook versions may not match in CI.
     ENV PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
   )
 endif()
 
-ament_export_dependencies(shared_buffer rosidl_buffer)
+ament_export_dependencies(shmem_buffer rosidl_buffer)
 ament_package()

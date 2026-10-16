@@ -268,13 +268,13 @@ source install/setup.bash</code></pre>
         <div class="tab-panel" id="cpp-panel" role="tabpanel" aria-labelledby="cpp-tab">
           <div class="code-column">
             <div class="code-title"><span>Publisher</span><button type="button" class="copy-button dark" data-copy-target="cpp-pub">Copy</button></div>
-            <pre id="cpp-pub"><code><span class="token-keyword">#include</span> <span class="token-string">"shared_buffer/shared_buffer_api.hpp"</span>
+            <pre id="cpp-pub"><code><span class="token-keyword">#include</span> <span class="token-string">"shmem_buffer/shmem_buffer_api.hpp"</span>
 
 sensor_msgs::msg::Image msg;
-msg.data = shared_buffer::allocate_buffer(byte_count);
+msg.data = shmem_buffer::allocate_buffer(byte_count);
 
 {
-  <span class="token-keyword">auto</span> write = shared_buffer::from_output_buffer(msg.data);
+  <span class="token-keyword">auto</span> write = shmem_buffer::from_output_buffer(msg.data);
   std::memcpy(write.get_ptr(), pixels, byte_count);
 } <span class="token-comment">// write を finalize</span>
 
@@ -286,7 +286,7 @@ publisher-&gt;publish(msg);</code></pre>
   sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
   <span class="token-keyword">auto</span> read =
-    shared_buffer::from_input_buffer(msg-&gt;data);
+    shmem_buffer::from_input_buffer(msg-&gt;data);
 
   process_pixels(
     read.get_ptr(),
@@ -299,7 +299,7 @@ publisher-&gt;publish(msg);</code></pre>
           <div class="code-column">
             <div class="code-title"><span>Write</span><button type="button" class="copy-button dark" data-copy-target="py-write">Copy</button></div>
             <pre id="py-write"><code><span class="token-keyword">import</span> numpy <span class="token-keyword">as</span> np
-<span class="token-keyword">from</span> shared_buffer <span class="token-keyword">import</span> allocate_buffer, write_buffer
+<span class="token-keyword">from</span> shmem_buffer <span class="token-keyword">import</span> allocate_buffer, write_buffer
 
 buffer = allocate_buffer(1920 * 1080)
 <span class="token-keyword">with</span> write_buffer(buffer) <span class="token-keyword">as</span> view:
@@ -312,7 +312,7 @@ message.data = buffer</code></pre>
           <div class="code-column">
             <div class="code-title"><span>Read</span><button type="button" class="copy-button dark" data-copy-target="py-read">Copy</button></div>
             <pre id="py-read"><code><span class="token-keyword">import</span> numpy <span class="token-keyword">as</span> np
-<span class="token-keyword">from</span> shared_buffer <span class="token-keyword">import</span> read_buffer
+<span class="token-keyword">from</span> shmem_buffer <span class="token-keyword">import</span> read_buffer
 
 view = read_buffer(message.data)
 image = np.frombuffer(view, dtype=np.uint8)

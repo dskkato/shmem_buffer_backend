@@ -33,8 +33,8 @@ flowchart LR
   Sub["Subscriber node"]
 
   Pub -->|"allocate_buffer + from_output_buffer"| Buffer["rosidl::Buffer&lt;uint8_t&gt;"]
-  Buffer -->|"backend = 'shared_buffer'"| Plugin[shmem_buffer_backend plugin]
-  Plugin -->|"create_descriptor"| Descriptor["SharedBufferDescriptor<br/>(pid, block_id, size, socket, ipc_uid)"]
+  Buffer -->|"backend = 'shmem_buffer'"| Plugin[shmem_buffer_backend plugin]
+  Plugin -->|"create_descriptor"| Descriptor["ShmemBufferDescriptor<br/>(pid, block_id, size, socket, ipc_uid)"]
   Descriptor -->|"published over RMW"| Sub
 
   Plugin -.->|"shared-memory allocations"| Pool[SharedBufferMemoryPool]
@@ -64,8 +64,8 @@ On Linux, the broker socket is a rendezvous mechanism only. It may require best-
 filesystem cleanup, but it does not own the lifetime of the payload. The
 payload lifetime is determined by memfd FD and mapping references.
 
-On Windows no listener broker is needed. `shared_buffer_socket_path` carries an ASCII
-`Local\\rosidl_shared_buffer_<pid>_<nonce>_<block_id>` mapping name. The
+On Windows no listener broker is needed. `shmem_buffer_socket_path` carries an ASCII
+`Local\\rosidl_shmem_buffer_<pid>_<nonce>_<block_id>` mapping name. The
 subscriber calls `OpenFileMappingW` directly, and Windows removes the name
 after the last mapping handle is closed.
 
@@ -85,7 +85,7 @@ sequenceDiagram
   Pub->>Pub: write payload and finalize
   Pub->>Broker: register block once if needed
   Pub->>Pub: release-store current ipc_uid after payload writes
-  Pub-->>Sub: publish SharedBufferDescriptor
+  Pub-->>Sub: publish ShmemBufferDescriptor
 
   Sub->>Cache: lookup physical block
   alt cache hit
@@ -158,7 +158,7 @@ the remote endpoint advertises `shm` with identical metadata.
 
 ```mermaid
 flowchart TB
-  Discover["on_discovering_endpoint(remote)"] --> A{"remote supports 'shared_buffer'?"}
+  Discover["on_discovering_endpoint(remote)"] --> A{"remote supports 'shmem_buffer'?"}
   A -->|no| Fallback[CPU fallback]
   A -->|yes| B{"same host and same euid?"}
   B -->|yes| Use[Use shared-memory sharing]
@@ -173,7 +173,7 @@ that needs them and select CPU fallback or allocation failure as appropriate.
 
 ## Descriptor contract
 
-`SharedBufferDescriptor` identifies a publication and supplies enough
+`ShmemBufferDescriptor` identifies a publication and supplies enough
 information for a subscriber to obtain and validate the corresponding
 mapping. The descriptor does not contain a native FD or handle.
 
@@ -181,10 +181,10 @@ mapping. The descriptor does not contain a native FD or handle.
 |---|---|
 | `size` | Logical payload size in bytes exposed as the `rosidl::Buffer` size. |
 | `element_type_name` | Runtime element-type check, initially `uint8_t`. |
-| `shared_buffer_pid` | Publisher process ID used as part of the block identity. |
-| `shared_buffer_block_id` | Stable block ID within the publisher process and pool lifetime. |
-| `shared_buffer_block_size` | Total mapped region size, including the control header and payload. |
-| `shared_buffer_socket_path` | Linux Unix-domain FD broker path, or Windows named file-mapping object name. |
+| `shmem_buffer_pid` | Publisher process ID used as part of the block identity. |
+| `shmem_buffer_block_id` | Stable block ID within the publisher process and pool lifetime. |
+| `shmem_buffer_block_size` | Total mapped region size, including the control header and payload. |
+| `shmem_buffer_socket_path` | Linux Unix-domain FD broker path, or Windows named file-mapping object name. |
 | `ipc_uid` | Non-zero allocation/reuse-generation UID used to reject a descriptor for an older generation. |
 
 The cache key must identify the physical imported block, not an individual
@@ -234,7 +234,7 @@ without a separate orphaned shared-memory cleanup protocol.
 
 Windows has no memfd or `SCM_RIGHTS` equivalent in this design. The publisher
 creates a page-file-backed mapping with `CreateFileMappingW`, stores its
-session-local name in `shared_buffer_socket_path`, and maps it with `MapViewOfFile`.
+session-local name in `shmem_buffer_socket_path`, and maps it with `MapViewOfFile`.
 Subscribers reopen the same object with `OpenFileMappingW`. A random nonce in
 the name prevents PID/block-ID reuse from attaching to a stale object, and
 `ERROR_ALREADY_EXISTS` is rejected rather than silently reusing an object.
@@ -272,7 +272,7 @@ be confused with POSIX named shared memory.
 Each `SharedBufferBlock` contains:
 
 - one native FD/HANDLE and one publisher-side shared mapping;
-- a stable process-local `shared_buffer_block_id`;
+- a stable process-local `shmem_buffer_block_id`;
 - a fixed payload size and total mapping size;
 - a control header at the beginning of the mapping;
 - a Linux broker registration or Windows named-object identity; and
