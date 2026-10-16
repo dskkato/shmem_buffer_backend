@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>shmem_buffer_backend</name>
+  <version>0.1.0</version>
+  <description>Pluginlib backend for shared-memory rosidl::Buffer transport.</description>
+
+  <maintainer email="kato.daisuke429@gmail.com">dskkato</maintainer>
+  <license>Apache-2.0</license>
+  <author email="kato.daisuke429@gmail.com">dskkato</author>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>shmem_buffer</depend>
+  <depend>shmem_buffer_backend_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>rcutils</depend>
+  <depend>rosidl_buffer_backend</depend>
+  <depend>rosidl_buffer_backend_registry</depend>
+  <depend>rosidl_runtime_cpp</depend>
+  <depend>rosidl_typesupport_cpp</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>launch_ros</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>rclcpp</test_depend>
+  <test_depend>rclcpp_components</test_depend>
+  <test_depend>sensor_msgs</test_depend>
+  <test_depend>std_msgs</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

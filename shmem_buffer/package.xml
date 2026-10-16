@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>shmem_buffer</name>
+  <version>0.1.0</version>
+  <description>Shared-memory rosidl::Buffer storage, and same-host
+   endpoint locality discovery for rosidl::Buffer backends.</description>
+
+  <maintainer email="kato.daisuke429@gmail.com">dskkato</maintainer>
+  <license>Apache-2.0</license>
+  <author email="kato.daisuke429@gmail.com">dskkato</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>shmem_buffer_backend_msgs</depend>
+  <depend>rcutils</depend>
+  <depend>rmw</depend>
+  <depend>rosidl_buffer</depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

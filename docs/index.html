@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="shared_buffer_backend — ROS 2 Lyrical の rosidl::Buffer を Linux / Windows の共有メモリに置くバックエンド">
+  <meta name="description" content="shmem_buffer_backend — ROS 2 Lyrical の rosidl::Buffer を Linux / Windows の共有メモリに置くバックエンド">
   <meta name="theme-color" content="#071a23">
-  <title>shared_buffer_backend | ROS 2 shared memory for rosidl::Buffer</title>
+  <title>shmem_buffer_backend | ROS 2 shared memory for rosidl::Buffer</title>
   <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,9 +13,9 @@
   <a class="skip-link" href="#main">本文へ移動</a>
 
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="shared_buffer_backend トップ">
+    <a class="brand" href="#top" aria-label="shmem_buffer_backend トップ">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span>shared_buffer_backend</span>
+      <span>shmem_buffer_backend</span>
     </a>
     <nav aria-label="ページ内ナビゲーション">
       <a href="#concept">仕組み</a>
@@ -23,7 +23,7 @@
       <a href="#usage">使い方</a>
       <a href="#support">対応範囲</a>
     </nav>
-    <a class="github-link" href="https://github.com/dskkato/shared_buffer_backend">GitHub <span aria-hidden="true">↗</span></a>
+    <a class="github-link" href="https://github.com/dskkato/shmem_buffer_backend">GitHub <span aria-hidden="true">↗</span></a>
   </header>
 
   <main id="main">
@@ -32,7 +32,7 @@
         <p class="eyebrow">ROS 2 Lyrical · rosidl::Buffer backend</p>
         <h1>大きなデータは動かさない。<br><span>参照だけを届ける。</span></h1>
         <p class="lede">
-          <code>shared_buffer_backend</code> は、画像などの buffer payload を同一ホスト上の
+          <code>shmem_buffer_backend</code> は、画像などの buffer payload を同一ホスト上の
           共有メモリに置き、ROS 2 のメッセージでは buffer payload の代わりに小さな descriptor を配送します。
           C++ と Python から、同じ仕組みを利用できます。
         </p>
@@ -241,7 +241,7 @@
           <pre id="install-code"><code>mkdir -p ~/ros2_lyrical_ws/src
 cd ~/ros2_lyrical_ws/src
 git clone -b lyrical \
-  https://github.com/dskkato/shared_buffer_backend.git
+  https://github.com/dskkato/shmem_buffer_backend.git
 
 cd ~/ros2_lyrical_ws
 rosdep install --from-paths src --ignore-src -r -y
@@ -268,13 +268,13 @@ source install/setup.bash</code></pre>
         <div class="tab-panel" id="cpp-panel" role="tabpanel" aria-labelledby="cpp-tab">
           <div class="code-column">
             <div class="code-title"><span>Publisher</span><button type="button" class="copy-button dark" data-copy-target="cpp-pub">Copy</button></div>
-            <pre id="cpp-pub"><code><span class="token-keyword">#include</span> <span class="token-string">"shared_buffer/shared_buffer_api.hpp"</span>
+            <pre id="cpp-pub"><code><span class="token-keyword">#include</span> <span class="token-string">"shmem_buffer/shmem_buffer_api.hpp"</span>
 
 sensor_msgs::msg::Image msg;
-msg.data = shared_buffer::allocate_buffer(byte_count);
+msg.data = shmem_buffer::allocate_buffer(byte_count);
 
 {
-  <span class="token-keyword">auto</span> write = shared_buffer::from_output_buffer(msg.data);
+  <span class="token-keyword">auto</span> write = shmem_buffer::from_output_buffer(msg.data);
   std::memcpy(write.get_ptr(), pixels, byte_count);
 } <span class="token-comment">// write を finalize</span>
 
@@ -286,7 +286,7 @@ publisher-&gt;publish(msg);</code></pre>
   sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
   <span class="token-keyword">auto</span> read =
-    shared_buffer::from_input_buffer(msg-&gt;data);
+    shmem_buffer::from_input_buffer(msg-&gt;data);
 
   process_pixels(
     read.get_ptr(),
@@ -299,7 +299,7 @@ publisher-&gt;publish(msg);</code></pre>
           <div class="code-column">
             <div class="code-title"><span>Write</span><button type="button" class="copy-button dark" data-copy-target="py-write">Copy</button></div>
             <pre id="py-write"><code><span class="token-keyword">import</span> numpy <span class="token-keyword">as</span> np
-<span class="token-keyword">from</span> shared_buffer <span class="token-keyword">import</span> allocate_buffer, write_buffer
+<span class="token-keyword">from</span> shmem_buffer <span class="token-keyword">import</span> allocate_buffer, write_buffer
 
 buffer = allocate_buffer(1920 * 1080)
 <span class="token-keyword">with</span> write_buffer(buffer) <span class="token-keyword">as</span> view:
@@ -312,7 +312,7 @@ message.data = buffer</code></pre>
           <div class="code-column">
             <div class="code-title"><span>Read</span><button type="button" class="copy-button dark" data-copy-target="py-read">Copy</button></div>
             <pre id="py-read"><code><span class="token-keyword">import</span> numpy <span class="token-keyword">as</span> np
-<span class="token-keyword">from</span> shared_buffer <span class="token-keyword">import</span> read_buffer
+<span class="token-keyword">from</span> shmem_buffer <span class="token-keyword">import</span> read_buffer
 
 view = read_buffer(message.data)
 image = np.frombuffer(view, dtype=np.uint8)
@@ -323,7 +323,7 @@ process(image)</code></pre>
 
       <div class="notes-grid">
         <article class="note reveal"><span>i</span><div><strong>read view の lifetime は自動管理</strong><p>read lease は派生した NumPy array / memoryview に保持され、最後の view が破棄された時に自動で解放されます。write view は <code>with</code> の scope 内だけで使用してください。</p></div></article>
-        <article class="note reveal"><span>i</span><div><strong>受信側の CPU buffer も読める</strong><p><code>from_input_buffer()</code> / <code>read_buffer()</code> は非 shared buffer を同期 copy で promote できます。この場合は inter-process zero-copy ではありません。</p></div></article>
+        <article class="note reveal"><span>i</span><div><strong>受信側の CPU buffer も読める</strong><p><code>from_input_buffer()</code> / <code>read_buffer()</code> は CPU buffer を同期 copy で shared-memory buffer に promote できます。この場合は inter-process zero-copy ではありません。</p></div></article>
       </div>
     </section>
 
@@ -354,14 +354,14 @@ process(image)</code></pre>
         <p>制御 header、block reuse、cache、memory ordering、fallback の詳細は design document にまとめています。</p>
       </div>
       <div class="cta-actions">
-        <a class="button primary" href="https://github.com/dskkato/shared_buffer_backend/blob/rolling/docs/shared_buffer_backend_design.md">Design document を読む</a>
-        <a class="text-link" href="https://github.com/dskkato/shared_buffer_backend">Source code <span aria-hidden="true">↗</span></a>
+        <a class="button primary" href="https://github.com/dskkato/shmem_buffer_backend/blob/rolling/docs/shmem_buffer_backend_design.md">Design document を読む</a>
+        <a class="text-link" href="https://github.com/dskkato/shmem_buffer_backend">Source code <span aria-hidden="true">↗</span></a>
       </div>
     </section>
   </main>
 
   <footer>
-    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span><span>shared_buffer_backend</span></a>
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span><span>shmem_buffer_backend</span></a>
     <p>Apache-2.0 · Built for ROS 2 Lyrical</p>
   </footer>
 

@@ -17,10 +17,10 @@ jobs:
         uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: |
-            shared_buffer_backend_msgs
-            shared_buffer
-            shared_buffer_backend_py
-            shared_buffer_backend
+            shmem_buffer_backend_msgs
+            shmem_buffer
+            shmem_buffer_backend_py
+            shmem_buffer_backend
           target-ros2-distro: rolling
           no-symlink-install: true
           extra-cmake-args: -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
