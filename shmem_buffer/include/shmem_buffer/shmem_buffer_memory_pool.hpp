@@ -31,7 +31,7 @@
 namespace shmem_buffer
 {
 
-inline constexpr std::uint64_t kShmemBufferControlMagic = 0x5348415245425546ULL;  // "SHAREBUF"
+inline constexpr std::uint64_t kShmemBufferControlMagic = 0x53484D454D425546ULL;  // "SHMEMBUF"
 inline constexpr std::uint32_t kShmemBufferControlAbiVersion = 3;
 inline constexpr std::size_t kShmemBufferPayloadOffset = 64;
 inline constexpr std::uint64_t kShmemBufferGracePeriodUs = 100000;
