@@ -29,8 +29,8 @@
 #include "shared_buffer/shared_buffer_impl.hpp"
 #include "shared_buffer/shared_buffer_ipc_manager.hpp"
 #include "shared_buffer/shared_buffer_memory_pool.hpp"
-#include "shared_buffer_backend/shared_buffer_backend.hpp"
-#include "shared_buffer_backend_msgs/msg/shared_buffer_descriptor.hpp"
+#include "shmem_buffer_backend/shmem_buffer_backend.hpp"
+#include "shmem_buffer_backend_msgs/msg/shared_buffer_descriptor.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "rosidl_buffer/buffer_impl_base.hpp"
 #include "rosidl_typesupport_cpp/message_type_support.hpp"
@@ -57,12 +57,12 @@ std::string SharedBufferBackend::get_backend_metadata() const
 const rosidl_message_type_support_t * SharedBufferBackend::get_descriptor_type_support() const
 {
   return rosidl_typesupport_cpp::get_message_type_support_handle<
-    shared_buffer_backend_msgs::msg::SharedBufferDescriptor>();
+    shmem_buffer_backend_msgs::msg::SharedBufferDescriptor>();
 }
 
 std::shared_ptr<void> SharedBufferBackend::create_empty_descriptor() const
 {
-  return std::make_shared<shared_buffer_backend_msgs::msg::SharedBufferDescriptor>();
+  return std::make_shared<shmem_buffer_backend_msgs::msg::SharedBufferDescriptor>();
 }
 
 void SharedBufferBackend::on_creating_endpoint(
@@ -134,7 +134,7 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
       pool->refresh_publish_timestamp(control);
 
       auto descriptor =
-        std::make_shared<shared_buffer_backend_msgs::msg::SharedBufferDescriptor>();
+        std::make_shared<shmem_buffer_backend_msgs::msg::SharedBufferDescriptor>();
       descriptor->size = shared_buffer.size();
       descriptor->element_type_name = typeid(std::uint8_t).name();
       descriptor->shared_buffer_pid = shared_buffer.ipc_pid();
@@ -155,7 +155,7 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
       return nullptr;
     }
 
-    auto descriptor = std::make_shared<shared_buffer_backend_msgs::msg::SharedBufferDescriptor>();
+    auto descriptor = std::make_shared<shmem_buffer_backend_msgs::msg::SharedBufferDescriptor>();
     descriptor->size = shared_buffer_impl->size();
     descriptor->element_type_name = typeid(std::uint8_t).name();
 #ifdef _WIN32
@@ -182,7 +182,7 @@ std::unique_ptr<void, void (*)(void *)> SharedBufferBackend::from_descriptor_wit
     throw std::runtime_error("null shared-buffer descriptor");
   }
   const auto & descriptor =
-    *static_cast<const shared_buffer_backend_msgs::msg::SharedBufferDescriptor *>(descriptor_ptr);
+    *static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(descriptor_ptr);
   if (descriptor.element_type_name != typeid(std::uint8_t).name()) {
     throw std::runtime_error("shared-buffer descriptor element type mismatch");
   }

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(shared_buffer_backend_py)
+project(shmem_buffer_backend_py)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT WIN32)
   message(FATAL_ERROR
-    "shared_buffer_backend_py supports Linux and Windows only "
+    "shmem_buffer_backend_py supports Linux and Windows only "
     "(CMAKE_SYSTEM_NAME='${CMAKE_SYSTEM_NAME}').")
 endif()
 

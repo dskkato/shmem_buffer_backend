@@ -23,8 +23,8 @@
 
 #include "shared_buffer/shared_buffer_api.hpp"
 #include "shared_buffer/shared_buffer_impl.hpp"
-#include "shared_buffer_backend/shared_buffer_backend.hpp"
-#include "shared_buffer_backend_msgs/msg/shared_buffer_descriptor.hpp"
+#include "shmem_buffer_backend/shmem_buffer_backend.hpp"
+#include "shmem_buffer_backend_msgs/msg/shared_buffer_descriptor.hpp"
 
 namespace
 {
@@ -67,7 +67,7 @@ TEST(SharedBufferBackendTest, DescriptorRoundTripUsesPlatformIpcAndMappingCache)
   auto descriptor = backend.create_descriptor_with_endpoint(buffer.get_impl(), info);
   ASSERT_NE(nullptr, descriptor);
   const auto * typed_descriptor =
-    static_cast<const shared_buffer_backend_msgs::msg::SharedBufferDescriptor *>(descriptor.get());
+    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(descriptor.get());
   ASSERT_EQ(128u, typed_descriptor->size);
   ASSERT_NE(0u, typed_descriptor->ipc_uid);
 #ifdef _WIN32
@@ -133,7 +133,7 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   auto source_descriptor = backend.create_descriptor_with_endpoint(source.get_impl(), info);
   ASSERT_NE(nullptr, source_descriptor);
   const auto * source_typed =
-    static_cast<const shared_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
+    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
     source_descriptor.get());
 
   auto imported = backend.from_descriptor_with_endpoint(source_descriptor.get(), info);
@@ -151,7 +151,7 @@ TEST(SharedBufferBackendTest, ImportedBufferCanBeForwardedWithoutCpuCopy)
   auto forwarded = backend.create_descriptor_with_endpoint(imported_impl, info);
   ASSERT_NE(nullptr, forwarded);
   const auto * forwarded_typed =
-    static_cast<const shared_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
+    static_cast<const shmem_buffer_backend_msgs::msg::SharedBufferDescriptor *>(
     forwarded.get());
   EXPECT_EQ(source_typed->shared_buffer_pid, forwarded_typed->shared_buffer_pid);
   EXPECT_EQ(source_typed->shared_buffer_block_id, forwarded_typed->shared_buffer_block_id);

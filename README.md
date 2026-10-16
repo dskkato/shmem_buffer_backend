@@ -1,6 +1,6 @@
-# shared_buffer_backend
+# shmem_buffer_backend
 
-`shared_buffer_backend` is a `rosidl::Buffer` backend that shares memory between
+`shmem_buffer_backend` is a `rosidl::Buffer` backend that shares memory between
 compatible ROS 2 endpoints on Linux and Windows. Linux uses anonymous memfd
 allocations; Windows uses session-local named file mappings.
 
@@ -19,14 +19,14 @@ implementation.
 
 - `shared_buffer`: shared-memory allocation, pooling, handles, Linux FD
   brokering, and Windows named-mapping import.
-- `shared_buffer_backend_py`: Python zero-copy bindings for the shared-memory backend
+- `shmem_buffer_backend_py`: Python zero-copy bindings for the shared-memory backend
   (installs the `shared_buffer` Python module).
-- `shared_buffer_backend`: rosidl buffer backend plugin.
-- `shared_buffer_backend_msgs`: descriptor message used for inter-process import.
+- `shmem_buffer_backend`: rosidl buffer backend plugin.
+- `shmem_buffer_backend_msgs`: descriptor message used for inter-process import.
 
 ## Python zero-copy access
 
-The `shared_buffer_backend_py` package exposes Python buffer-protocol access
+The `shmem_buffer_backend_py` package exposes Python buffer-protocol access
 through the `shared_buffer` Python module. NumPy is optional and consumes the
 standard `memoryview` without copying:
 
@@ -57,5 +57,5 @@ escape the scope, and closing raises `BufferError` while one remains alive.
 ## Benchmark
 
 The benchmark package, benchmark results, report, and figures are maintained
-in the separate [`shared_buffer_backend_benchmark`](https://github.com/dskkato/shared_buffer_backend_benchmark)
+in the separate [`shmem_buffer_backend_benchmark`](https://github.com/dskkato/shmem_buffer_backend_benchmark)
 repository.

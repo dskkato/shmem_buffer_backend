@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>shared_buffer_backend_py</name>
+  <name>shmem_buffer_backend_py</name>
   <version>0.1.0</version>
   <description>Python zero-copy access to shared-memory rosidl buffers.</description>
 

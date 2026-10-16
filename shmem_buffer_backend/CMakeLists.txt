@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(shared_buffer_backend)
+project(shmem_buffer_backend)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT WIN32)
   message(FATAL_ERROR
-    "shared_buffer_backend supports Linux and Windows only "
+    "shmem_buffer_backend supports Linux and Windows only "
     "(CMAKE_SYSTEM_NAME='${CMAKE_SYSTEM_NAME}').")
 endif()
 
@@ -21,7 +21,7 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/shared_buffer_backend_plugin.cpp
+  src/shmem_buffer_backend_plugin.cpp
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
@@ -31,7 +31,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME}
-  ${shared_buffer_backend_msgs_TARGETS}
+  ${shmem_buffer_backend_msgs_TARGETS}
   rosidl_buffer_backend::rosidl_buffer_backend
   rosidl_runtime_cpp::rosidl_runtime_cpp
   rosidl_buffer_backend_registry::rosidl_buffer_backend_registry
@@ -55,14 +55,14 @@ if(BUILD_TESTING)
   find_package(std_msgs REQUIRED)
   find_package(launch_testing_ament_cmake REQUIRED)
 
-  ament_add_gtest(test_shared_buffer_backend
-    test/test_shared_buffer_backend.cpp
+  ament_add_gtest(test_shmem_buffer_backend
+    test/test_shmem_buffer_backend.cpp
   )
-  if(TARGET test_shared_buffer_backend)
-    target_link_libraries(test_shared_buffer_backend
+  if(TARGET test_shmem_buffer_backend)
+    target_link_libraries(test_shmem_buffer_backend
       ${PROJECT_NAME}
       shared_buffer::shared_buffer
-      ${shared_buffer_backend_msgs_TARGETS}
+      ${shmem_buffer_backend_msgs_TARGETS}
       rosidl_buffer_backend::rosidl_buffer_backend
       rosidl_runtime_cpp::rosidl_runtime_cpp
       rosidl_typesupport_cpp::rosidl_typesupport_cpp

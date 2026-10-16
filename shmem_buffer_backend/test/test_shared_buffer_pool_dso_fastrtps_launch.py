@@ -44,7 +44,7 @@ def generate_test_description():
         executable='component_container',
         composable_node_descriptions=[
             ComposableNode(
-                package='shared_buffer_backend',
+                package='shmem_buffer_backend',
                 plugin='SharedImageSubscriber',
                 name='shared_buffer_image_subscriber',
             ),
@@ -59,7 +59,7 @@ def generate_test_description():
         executable='component_container',
         composable_node_descriptions=[
             ComposableNode(
-                package='shared_buffer_backend',
+                package='shmem_buffer_backend',
                 plugin='SharedImageRelay',
                 name='shared_buffer_image_relay',
                 parameters=[{
@@ -78,7 +78,7 @@ def generate_test_description():
         executable='component_container',
         composable_node_descriptions=[
             ComposableNode(
-                package='shared_buffer_backend',
+                package='shmem_buffer_backend',
                 plugin='SharedImageSubscriber',
                 name='shared_buffer_image_relay_subscriber',
                 parameters=[{
@@ -98,7 +98,7 @@ def generate_test_description():
         executable='component_container',
         composable_node_descriptions=[
             ComposableNode(
-                package='shared_buffer_backend',
+                package='shmem_buffer_backend',
                 plugin='SharedImageDsoPublisher',
                 name='shared_buffer_image_dso_publisher',
             ),

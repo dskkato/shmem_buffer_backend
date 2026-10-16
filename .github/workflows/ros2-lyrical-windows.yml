@@ -22,7 +22,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
         with:
-          path: src/shared_buffer_backend
+          path: src/shmem_buffer_backend
 
       - name: Cache ROS 2 Lyrical archive
         uses: actions/cache@v4
@@ -80,7 +80,7 @@ jobs:
           if (-not (Test-Path (Join-Path $sitePackages 'ament_clang_tidy/main.py'))) {
             throw "Could not find the ROS ament_lint Python packages in $sitePackages"
           }
-          $patchFile = Join-Path $env:GITHUB_WORKSPACE 'src/shared_buffer_backend/.github/patches/ament_lint-windows-executable-lookup.patch'
+          $patchFile = Join-Path $env:GITHUB_WORKSPACE 'src/shmem_buffer_backend/.github/patches/ament_lint-windows-executable-lookup.patch'
           Push-Location $sitePackages
           try {
             git apply --check -p1 $patchFile

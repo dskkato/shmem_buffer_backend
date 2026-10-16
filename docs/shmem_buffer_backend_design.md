@@ -2,7 +2,7 @@
 
 ## Introduction
 
-`shared_buffer_backend` is a Linux and Windows `rosidl::Buffer<T>` storage
+`shmem_buffer_backend` is a Linux and Windows `rosidl::Buffer<T>` storage
 backend. Linux places the payload in an anonymous `memfd`; Windows places it
 in a session-local named file mapping. Compatible ROS 2 endpoints map the same
 backing object, while the ROS message carries only a small descriptor. When
@@ -33,7 +33,7 @@ flowchart LR
   Sub["Subscriber node"]
 
   Pub -->|"allocate_buffer + from_output_buffer"| Buffer["rosidl::Buffer&lt;uint8_t&gt;"]
-  Buffer -->|"backend = 'shared_buffer'"| Plugin[shared_buffer_backend plugin]
+  Buffer -->|"backend = 'shared_buffer'"| Plugin[shmem_buffer_backend plugin]
   Plugin -->|"create_descriptor"| Descriptor["SharedBufferDescriptor<br/>(pid, block_id, size, socket, ipc_uid)"]
   Descriptor -->|"published over RMW"| Sub
 

@@ -1,6 +1,6 @@
 <!-- Copyright 2026 Daisuke Kato
      Licensed under the Apache License, Version 2.0 -->
-<library path="shared_buffer_backend">
+<library path="shmem_buffer_backend">
   <class name="shared_buffer"
          type="shared_buffer::SharedBufferBackend"
          base_class_type="rosidl::BufferBackend">

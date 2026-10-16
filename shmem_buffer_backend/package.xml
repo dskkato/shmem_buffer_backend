@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>shared_buffer_backend</name>
+  <name>shmem_buffer_backend</name>
   <version>0.1.0</version>
   <description>Pluginlib backend for shared-memory rosidl::Buffer transport.</description>
 
@@ -11,7 +11,7 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>shared_buffer</depend>
-  <depend>shared_buffer_backend_msgs</depend>
+  <depend>shmem_buffer_backend_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rcutils</depend>
   <depend>rosidl_buffer_backend</depend>

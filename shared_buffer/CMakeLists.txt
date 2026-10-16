@@ -18,7 +18,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_buffer REQUIRED)
-find_package(shared_buffer_backend_msgs REQUIRED)
+find_package(shmem_buffer_backend_msgs REQUIRED)
 find_package(rmw REQUIRED)
 find_package(rcutils REQUIRED)
 
@@ -49,7 +49,7 @@ target_link_libraries(${PROJECT_NAME}
     rosidl_buffer::rosidl_buffer
     rmw::rmw
     rcutils::rcutils
-    ${shared_buffer_backend_msgs_TARGETS}
+    ${shmem_buffer_backend_msgs_TARGETS}
 )
 if(WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE advapi32)
@@ -72,7 +72,7 @@ install(
 )
 
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(rosidl_buffer shared_buffer_backend_msgs rmw rcutils)
+ament_export_dependencies(rosidl_buffer shmem_buffer_backend_msgs rmw rcutils)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_include_directories(include/${PROJECT_NAME})
 
