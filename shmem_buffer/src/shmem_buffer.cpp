@@ -22,7 +22,7 @@ namespace shmem_buffer
 namespace
 {
 
-std::shared_ptr<void> make_lease(SharedBufferControlHeader * control)
+std::shared_ptr<void> make_lease(ShmemBufferControlHeader * control)
 {
   if (control == nullptr) {
     return {};
@@ -31,7 +31,7 @@ std::shared_ptr<void> make_lease(SharedBufferControlHeader * control)
     throw std::runtime_error("shared buffer block is being reused");
   }
   return std::shared_ptr<void>(control, [](void * ptr) {
-             auto * header = static_cast<SharedBufferControlHeader *>(ptr);
+             auto * header = static_cast<ShmemBufferControlHeader *>(ptr);
              release_shmem_buffer_reader(header);
   });
 }
@@ -132,9 +132,9 @@ void WriteHandle::release() noexcept
   data_ptr_ = nullptr;
 }
 
-SharedBuffer::SharedBuffer(
+ShmemBuffer::ShmemBuffer(
   void * payload, std::size_t size, std::function<void(std::uint8_t *)> deleter,
-  SharedBufferControlHeader * control, std::shared_ptr<void> owner, std::uint32_t block_id,
+  ShmemBufferControlHeader * control, std::shared_ptr<void> owner, std::uint32_t block_id,
   std::uint64_t mapped_size, bool writable, std::int32_t ipc_pid, std::string ipc_name,
   std::uint64_t ipc_uid)
 : data_ptr_(static_cast<std::uint8_t *>(payload)),
@@ -150,16 +150,16 @@ SharedBuffer::SharedBuffer(
   ipc_uid_(ipc_uid)
 {
   if (data_ptr_ == nullptr && size_ != 0) {
-    throw std::invalid_argument("SharedBuffer payload must not be null");
+    throw std::invalid_argument("ShmemBuffer payload must not be null");
   }
   if (!deleter_) {
     deleter_ = [](std::uint8_t *) {};
   }
 }
 
-SharedBuffer::~SharedBuffer() {reset();}
+ShmemBuffer::~ShmemBuffer() {reset();}
 
-SharedBuffer::SharedBuffer(SharedBuffer && other) noexcept
+ShmemBuffer::ShmemBuffer(ShmemBuffer && other) noexcept
 : data_ptr_(other.data_ptr_),
   size_(other.size_),
   deleter_(std::move(other.deleter_)),
@@ -184,7 +184,7 @@ SharedBuffer::SharedBuffer(SharedBuffer && other) noexcept
   other.ipc_uid_ = 0;
 }
 
-SharedBuffer & SharedBuffer::operator=(SharedBuffer && other) noexcept
+ShmemBuffer & ShmemBuffer::operator=(ShmemBuffer && other) noexcept
 {
   if (this != &other) {
     reset();
@@ -213,7 +213,7 @@ SharedBuffer & SharedBuffer::operator=(SharedBuffer && other) noexcept
   return *this;
 }
 
-ReadHandle SharedBuffer::get_read_handle() const
+ReadHandle ShmemBuffer::get_read_handle() const
 {
   if (handle_state_ == nullptr) {
     handle_state_ = std::make_shared<HandleState>();
@@ -239,7 +239,7 @@ ReadHandle SharedBuffer::get_read_handle() const
   }
 }
 
-WriteHandle SharedBuffer::get_write_handle()
+WriteHandle ShmemBuffer::get_write_handle()
 {
   if (!writable_) {
     throw std::runtime_error("cannot acquire a write handle for a read-only shared buffer");
@@ -264,7 +264,7 @@ WriteHandle SharedBuffer::get_write_handle()
   return WriteHandle(data_ptr_, handle_state_, owner_);
 }
 
-void SharedBuffer::finalize_write_handle() const
+void ShmemBuffer::finalize_write_handle() const
 {
   if (handle_state_ == nullptr) {
     return;
@@ -275,7 +275,7 @@ void SharedBuffer::finalize_write_handle() const
   }
 }
 
-void SharedBuffer::hold_reader_reference()
+void ShmemBuffer::hold_reader_reference()
 {
   if (held_reader_lease_ != nullptr) {
     return;
@@ -283,7 +283,7 @@ void SharedBuffer::hold_reader_reference()
   held_reader_lease_ = make_lease(control_);
 }
 
-void SharedBuffer::reset() noexcept
+void ShmemBuffer::reset() noexcept
 {
   held_reader_lease_.reset();
   handle_state_.reset();

@@ -19,9 +19,9 @@
 namespace shmem_buffer
 {
 
-std::shared_ptr<SharedBufferMemoryPool> get_or_create_global_pool()
+std::shared_ptr<ShmemBufferMemoryPool> get_or_create_global_pool()
 {
-  static std::shared_ptr<SharedBufferMemoryPool> pool = std::make_shared<SharedBufferMemoryPool>();
+  static std::shared_ptr<ShmemBufferMemoryPool> pool = std::make_shared<ShmemBufferMemoryPool>();
   return pool;
 }
 

@@ -118,7 +118,7 @@ def generate_test_description():
     ])
 
 
-class TestSharedBufferPoolDsoFastRTPS(unittest.TestCase):
+class TestShmemBufferPoolDsoFastRTPS(unittest.TestCase):
     """Verify descriptor transport when allocation and serialization use DSOs."""
 
     @classmethod
@@ -213,7 +213,7 @@ class TestSharedBufferPoolDsoFastRTPS(unittest.TestCase):
 
 
 @launch_testing.post_shutdown_test()
-class TestSharedBufferPoolDsoFastRTPSShutdown(unittest.TestCase):
+class TestShmemBufferPoolDsoFastRTPSShutdown(unittest.TestCase):
     """Check that both component containers shut down cleanly."""
 
     def test_exit_codes(self, proc_info):

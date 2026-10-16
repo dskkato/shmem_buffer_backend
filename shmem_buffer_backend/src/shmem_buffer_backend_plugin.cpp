@@ -38,9 +38,9 @@
 namespace shmem_buffer
 {
 
-SharedBufferBackend::SharedBufferBackend() = default;
+ShmemBufferBackend::ShmemBufferBackend() = default;
 
-std::shared_ptr<HostEndpointManager> SharedBufferBackend::get_endpoint_manager() const
+std::shared_ptr<HostEndpointManager> ShmemBufferBackend::get_endpoint_manager() const
 {
   std::lock_guard<std::mutex> lock(manager_mutex_);
   if (endpoint_manager_ == nullptr) {
@@ -49,29 +49,29 @@ std::shared_ptr<HostEndpointManager> SharedBufferBackend::get_endpoint_manager()
   return endpoint_manager_;
 }
 
-std::string SharedBufferBackend::get_backend_metadata() const
+std::string ShmemBufferBackend::get_backend_metadata() const
 {
   return get_endpoint_manager()->metadata();
 }
 
-const rosidl_message_type_support_t * SharedBufferBackend::get_descriptor_type_support() const
+const rosidl_message_type_support_t * ShmemBufferBackend::get_descriptor_type_support() const
 {
   return rosidl_typesupport_cpp::get_message_type_support_handle<
     shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor>();
 }
 
-std::shared_ptr<void> SharedBufferBackend::create_empty_descriptor() const
+std::shared_ptr<void> ShmemBufferBackend::create_empty_descriptor() const
 {
   return std::make_shared<shmem_buffer_backend_msgs::msg::ShmemBufferDescriptor>();
 }
 
-void SharedBufferBackend::on_creating_endpoint(
+void ShmemBufferBackend::on_creating_endpoint(
   const rmw_topic_endpoint_info_t & endpoint_info) const
 {
   (void)endpoint_info;
 }
 
-std::pair<bool, std::vector<std::set<std::uint32_t>>> SharedBufferBackend::on_discovering_endpoint(
+std::pair<bool, std::vector<std::set<std::uint32_t>>> ShmemBufferBackend::on_discovering_endpoint(
   const rmw_topic_endpoint_info_t & endpoint_info,
   const std::vector<rmw_topic_endpoint_info_t> & existing_endpoints,
   const std::unordered_map<std::string, std::string> & endpoint_supported_backends)
@@ -88,7 +88,7 @@ std::pair<bool, std::vector<std::set<std::uint32_t>>> SharedBufferBackend::on_di
   return {is_compatible, {}};
 }
 
-std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
+std::shared_ptr<void> ShmemBufferBackend::create_descriptor_with_endpoint(
   const void * impl, const rmw_topic_endpoint_info_t & endpoint_info) const
 {
   {
@@ -102,7 +102,7 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
     return nullptr;
   }
   const auto * base = static_cast<const rosidl::BufferImplBase<std::uint8_t> *>(impl);
-  const auto * shmem_buffer_impl = dynamic_cast<const SharedBufferImpl<std::uint8_t> *>(base);
+  const auto * shmem_buffer_impl = dynamic_cast<const ShmemBufferImpl<std::uint8_t> *>(base);
   if (shmem_buffer_impl == nullptr) {
     return nullptr;
   }
@@ -121,8 +121,8 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
     if (shmem_buffer.has_ipc_descriptor()) {
       auto * control = shmem_buffer.control();
       if (
-        control == nullptr || control->magic != kSharedBufferControlMagic ||
-        control->abi_version != kSharedBufferControlAbiVersion ||
+        control == nullptr || control->magic != kShmemBufferControlMagic ||
+        control->abi_version != kShmemBufferControlAbiVersion ||
         control->payload_size != shmem_buffer.size() ||
         control->ipc_uid.load(std::memory_order_acquire) != shmem_buffer.ipc_uid())
       {
@@ -145,7 +145,7 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
       return descriptor;
     }
 
-    SharedBufferBlock * block = pool->find_block_for_ptr(shmem_buffer.get_ptr());
+    ShmemBufferBlock * block = pool->find_block_for_ptr(shmem_buffer.get_ptr());
     if (block == nullptr || block->control == nullptr) {
       return nullptr;
     }
@@ -174,7 +174,7 @@ std::shared_ptr<void> SharedBufferBackend::create_descriptor_with_endpoint(
   }
 }
 
-std::unique_ptr<void, void (*)(void *)> SharedBufferBackend::from_descriptor_with_endpoint(
+std::unique_ptr<void, void (*)(void *)> ShmemBufferBackend::from_descriptor_with_endpoint(
   const void * descriptor_ptr, const rmw_topic_endpoint_info_t & endpoint_info) const
 {
   (void)endpoint_info;
@@ -189,13 +189,13 @@ std::unique_ptr<void, void (*)(void *)> SharedBufferBackend::from_descriptor_wit
   if (
     descriptor.shmem_buffer_pid <= 0 || descriptor.shmem_buffer_socket_path.empty() ||
     descriptor.ipc_uid == 0 ||
-    descriptor.shmem_buffer_block_size < kSharedBufferPayloadOffset ||
-    descriptor.size > descriptor.shmem_buffer_block_size - kSharedBufferPayloadOffset)
+    descriptor.shmem_buffer_block_size < kShmemBufferPayloadOffset ||
+    descriptor.size > descriptor.shmem_buffer_block_size - kShmemBufferPayloadOffset)
   {
     throw std::runtime_error("invalid shared-buffer descriptor metadata");
   }
 
-  auto imported = SharedBufferHandleCache::import_block(
+  auto imported = ShmemBufferHandleCache::import_block(
     descriptor.shmem_buffer_socket_path, descriptor.shmem_buffer_pid,
       descriptor.shmem_buffer_block_id,
     descriptor.shmem_buffer_block_size, descriptor.size, descriptor.ipc_uid);
@@ -206,11 +206,11 @@ std::unique_ptr<void, void (*)(void *)> SharedBufferBackend::from_descriptor_wit
   }
 
   auto reader_release = [imported](std::uint8_t *) {imported->release_reader();};
-  SharedBuffer buffer(
+  ShmemBuffer buffer(
     imported->payload(), descriptor.size, std::move(reader_release), imported->control(), imported,
     descriptor.shmem_buffer_block_id, descriptor.shmem_buffer_block_size, false,
     descriptor.shmem_buffer_pid, descriptor.shmem_buffer_socket_path, descriptor.ipc_uid);
-  auto result = std::make_unique<SharedBufferImpl<std::uint8_t>>(
+  auto result = std::make_unique<ShmemBufferImpl<std::uint8_t>>(
     std::move(buffer), static_cast<std::size_t>(descriptor.size));
   return {result.release(), [](void * ptr) {
       delete static_cast<rosidl::BufferImplBase<std::uint8_t> *>(ptr);
@@ -219,4 +219,4 @@ std::unique_ptr<void, void (*)(void *)> SharedBufferBackend::from_descriptor_wit
 
 }  // namespace shmem_buffer
 
-PLUGINLIB_EXPORT_CLASS(shmem_buffer::SharedBufferBackend, rosidl::BufferBackend)
+PLUGINLIB_EXPORT_CLASS(shmem_buffer::ShmemBufferBackend, rosidl::BufferBackend)

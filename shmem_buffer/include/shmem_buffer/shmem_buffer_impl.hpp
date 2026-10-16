@@ -36,24 +36,24 @@ namespace shmem_buffer
 ///
 /// The definition is intentionally out-of-line in the shmem_buffer shared
 /// library so that different DSOs do not create independent pool instances.
-SHMEM_BUFFER_PUBLIC std::shared_ptr<SharedBufferMemoryPool> get_or_create_global_pool();
+SHMEM_BUFFER_PUBLIC std::shared_ptr<ShmemBufferMemoryPool> get_or_create_global_pool();
 
-class SharedBufferError : public std::runtime_error
+class ShmemBufferError : public std::runtime_error
 {
 public:
-  explicit SharedBufferError(const std::string & message)
+  explicit ShmemBufferError(const std::string & message)
   : std::runtime_error(message) {}
 };
 
 template<typename T>
-class SharedBufferImpl : public rosidl::BufferImplBase<T>
+class ShmemBufferImpl : public rosidl::BufferImplBase<T>
 {
-  static_assert(std::is_trivially_copyable_v<T>, "SharedBufferImpl requires trivially copyable T");
+  static_assert(std::is_trivially_copyable_v<T>, "ShmemBufferImpl requires trivially copyable T");
 
 public:
-  SharedBufferImpl() = default;
+  ShmemBufferImpl() = default;
 
-  explicit SharedBufferImpl(std::size_t size)
+  explicit ShmemBufferImpl(std::size_t size)
   : size_(size)
   {
     if (size_ > 0) {
@@ -61,17 +61,17 @@ public:
     }
   }
 
-  SharedBufferImpl(SharedBuffer && buffer, std::size_t size)
+  ShmemBufferImpl(ShmemBuffer && buffer, std::size_t size)
   : size_(size), shmem_buffer_(std::move(buffer))
   {
   }
 
-  ~SharedBufferImpl() override = default;
+  ~ShmemBufferImpl() override = default;
 
-  SharedBufferImpl(const SharedBufferImpl &) = delete;
-  SharedBufferImpl & operator=(const SharedBufferImpl &) = delete;
-  SharedBufferImpl(SharedBufferImpl &&) = delete;
-  SharedBufferImpl & operator=(SharedBufferImpl &&) = delete;
+  ShmemBufferImpl(const ShmemBufferImpl &) = delete;
+  ShmemBufferImpl & operator=(const ShmemBufferImpl &) = delete;
+  ShmemBufferImpl(ShmemBufferImpl &&) = delete;
+  ShmemBufferImpl & operator=(ShmemBufferImpl &&) = delete;
 
   std::string get_backend_type() const override {return "shmem_buffer";}
   std::size_t size() const override {return size_;}
@@ -82,12 +82,12 @@ public:
       return;
     }
     if (size == 0) {
-      shmem_buffer_ = SharedBuffer();
+      shmem_buffer_ = ShmemBuffer();
       size_ = 0;
       return;
     }
 
-    SharedBuffer new_buffer = allocate_raw(size);
+    ShmemBuffer new_buffer = allocate_raw(size);
     const std::size_t copy_size = std::min(size, size_) * sizeof(T);
     if (copy_size > 0 && shmem_buffer_.get_ptr() != nullptr) {
       ReadHandle read = shmem_buffer_.get_read_handle();
@@ -100,7 +100,7 @@ public:
 
   void clear()
   {
-    shmem_buffer_ = SharedBuffer();
+    shmem_buffer_ = ShmemBuffer();
     size_ = 0;
   }
 
@@ -117,7 +117,7 @@ public:
 
   std::unique_ptr<rosidl::BufferImplBase<T>> clone() const override
   {
-    auto copy = std::make_unique<SharedBufferImpl<T>>(size_);
+    auto copy = std::make_unique<ShmemBufferImpl<T>>(size_);
     if (size_ > 0) {
       ReadHandle read = shmem_buffer_.get_read_handle();
       WriteHandle write = copy->shmem_buffer_.get_write_handle();
@@ -126,10 +126,10 @@ public:
     return copy;
   }
 
-  SharedBuffer & get_shmem_buffer() {return shmem_buffer_;}
-  const SharedBuffer & get_shmem_buffer() const {return shmem_buffer_;}
+  ShmemBuffer & get_shmem_buffer() {return shmem_buffer_;}
+  const ShmemBuffer & get_shmem_buffer() const {return shmem_buffer_;}
 
-  static std::shared_ptr<SharedBufferMemoryPool> get_or_create_global_pool()
+  static std::shared_ptr<ShmemBufferMemoryPool> get_or_create_global_pool()
   {
     return shmem_buffer::get_or_create_global_pool();
   }
@@ -140,19 +140,19 @@ private:
   static std::size_t byte_count(std::size_t count)
   {
     if (count > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
-      throw SharedBufferError("shared buffer size overflows size_t");
+      throw ShmemBufferError("shared buffer size overflows size_t");
     }
     return count * sizeof(T);
   }
 
-  static SharedBuffer allocate_raw(std::size_t count)
+  static ShmemBuffer allocate_raw(std::size_t count)
   {
     auto pool = get_or_create_global_pool();
     const std::size_t bytes = byte_count(count);
-    SharedBufferBlock * block = pool->allocate(bytes);
+    ShmemBufferBlock * block = pool->allocate(bytes);
     auto deleter = pool->deleter(block);
-    auto * payload = reinterpret_cast<std::uint8_t *>(block->mapping) + kSharedBufferPayloadOffset;
-    return SharedBuffer(
+    auto * payload = reinterpret_cast<std::uint8_t *>(block->mapping) + kShmemBufferPayloadOffset;
+    return ShmemBuffer(
       payload, bytes, std::move(deleter), block->control, nullptr, block->block_id,
       block->mapped_size);
   }
@@ -160,17 +160,17 @@ private:
   void allocate(std::size_t count) {shmem_buffer_ = allocate_raw(count);}
 
   template<typename U>
-  friend class SharedBufferImpl;
+  friend class ShmemBufferImpl;
   template<typename U>
-  friend class SharedBufferApiAccess;
+  friend class ShmemBufferApiAccess;
 
   std::size_t size_{0};
-  SharedBuffer shmem_buffer_;
+  ShmemBuffer shmem_buffer_;
 };
 
-inline std::shared_ptr<SharedBufferMemoryPool> get_global_shmem_buffer_pool()
+inline std::shared_ptr<ShmemBufferMemoryPool> get_global_shmem_buffer_pool()
 {
-  return SharedBufferImpl<std::uint8_t>::get_or_create_global_pool();
+  return ShmemBufferImpl<std::uint8_t>::get_or_create_global_pool();
 }
 
 }  // namespace shmem_buffer

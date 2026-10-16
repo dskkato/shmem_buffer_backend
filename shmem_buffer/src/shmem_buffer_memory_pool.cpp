@@ -36,10 +36,10 @@ std::uint64_t monotonic_time_us()
 
 }  // namespace
 
-SharedBufferMemoryPool::SharedBufferMemoryPool()
-: broker_(std::make_unique<SharedBufferFdBroker>()) {}
+ShmemBufferMemoryPool::ShmemBufferMemoryPool()
+: broker_(std::make_unique<ShmemBufferFdBroker>()) {}
 
-SharedBufferMemoryPool::~SharedBufferMemoryPool()
+ShmemBufferMemoryPool::~ShmemBufferMemoryPool()
 {
   // The broker owns duplicated descriptor references and socket listeners.
   // Stop unregistering those before closing the publisher descriptors.
@@ -48,7 +48,7 @@ SharedBufferMemoryPool::~SharedBufferMemoryPool()
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto & block : all_blocks_) {
     if (block->control != nullptr) {
-      block->control->~SharedBufferControlHeader();
+      block->control->~ShmemBufferControlHeader();
       block->control = nullptr;
     }
     destroy_platform_mapping(block->native_handle, block->mapping, block->mapped_size);
@@ -57,7 +57,7 @@ SharedBufferMemoryPool::~SharedBufferMemoryPool()
   }
 }
 
-SharedBufferBlock * SharedBufferMemoryPool::allocate(std::size_t payload_size)
+ShmemBufferBlock * ShmemBufferMemoryPool::allocate(std::size_t payload_size)
 {
   if (payload_size == 0) {
     throw std::invalid_argument("shared buffer pool cannot allocate a zero-size block");
@@ -65,7 +65,7 @@ SharedBufferBlock * SharedBufferMemoryPool::allocate(std::size_t payload_size)
 
   std::lock_guard<std::mutex> lock(mutex_);
   auto bucket = free_blocks_.find(payload_size);
-  SharedBufferBlock * block = nullptr;
+  ShmemBufferBlock * block = nullptr;
   if (bucket != free_blocks_.end()) {
     auto & candidates = bucket->second;
     for (std::size_t i = 0; i < candidates.size(); ++i) {
@@ -96,7 +96,7 @@ SharedBufferBlock * SharedBufferMemoryPool::allocate(std::size_t payload_size)
   return block;
 }
 
-void SharedBufferMemoryPool::free(SharedBufferBlock * block)
+void ShmemBufferMemoryPool::free(ShmemBufferBlock * block)
 {
   if (block == nullptr) {
     return;
@@ -109,18 +109,18 @@ void SharedBufferMemoryPool::free(SharedBufferBlock * block)
   free_blocks_[block->payload_size].push_back(block);
 }
 
-std::function<void(std::uint8_t *)> SharedBufferMemoryPool::deleter(SharedBufferBlock * block)
+std::function<void(std::uint8_t *)> ShmemBufferMemoryPool::deleter(ShmemBufferBlock * block)
 {
-  std::shared_ptr<SharedBufferMemoryPool> self;
+  std::shared_ptr<ShmemBufferMemoryPool> self;
   try {
     self = shared_from_this();
   } catch (const std::bad_weak_ptr &) {
-    throw std::runtime_error("SharedBufferMemoryPool must be owned by shared_ptr");
+    throw std::runtime_error("ShmemBufferMemoryPool must be owned by shared_ptr");
   }
   return [self, block](std::uint8_t *) {self->free(block);};
 }
 
-std::uint64_t SharedBufferMemoryPool::assign_uid(SharedBufferBlock * block)
+std::uint64_t ShmemBufferMemoryPool::assign_uid(ShmemBufferBlock * block)
 {
   if (block == nullptr || block->control == nullptr) {
     return 0;
@@ -135,7 +135,7 @@ std::uint64_t SharedBufferMemoryPool::assign_uid(SharedBufferBlock * block)
   return block->current_uid;
 }
 
-void SharedBufferMemoryPool::mark_published(SharedBufferBlock * block)
+void ShmemBufferMemoryPool::mark_published(ShmemBufferBlock * block)
 {
   if (block == nullptr || block->control == nullptr) {
     return;
@@ -144,7 +144,7 @@ void SharedBufferMemoryPool::mark_published(SharedBufferBlock * block)
   refresh_publish_timestamp(block->control);
 }
 
-void SharedBufferMemoryPool::refresh_publish_timestamp(SharedBufferControlHeader * control)
+void ShmemBufferMemoryPool::refresh_publish_timestamp(ShmemBufferControlHeader * control)
 {
   if (control == nullptr) {
     return;
@@ -152,7 +152,7 @@ void SharedBufferMemoryPool::refresh_publish_timestamp(SharedBufferControlHeader
   control->publish_timestamp_us.store(monotonic_time_us(), std::memory_order_release);
 }
 
-std::string SharedBufferMemoryPool::register_block_for_ipc(SharedBufferBlock * block)
+std::string ShmemBufferMemoryPool::register_block_for_ipc(ShmemBufferBlock * block)
 {
   if (block == nullptr || broker_ == nullptr) {
     return {};
@@ -161,7 +161,7 @@ std::string SharedBufferMemoryPool::register_block_for_ipc(SharedBufferBlock * b
   return broker_->register_block(block);
 }
 
-SharedBufferBlock * SharedBufferMemoryPool::find_block_for_ptr(const void * ptr) const
+ShmemBufferBlock * ShmemBufferMemoryPool::find_block_for_ptr(const void * ptr) const
 {
   if (ptr == nullptr) {
     return nullptr;
@@ -170,7 +170,7 @@ SharedBufferBlock * SharedBufferMemoryPool::find_block_for_ptr(const void * ptr)
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto & block : all_blocks_) {
     const auto start = reinterpret_cast<std::uintptr_t>(block->mapping) +
-      kSharedBufferPayloadOffset;
+      kShmemBufferPayloadOffset;
     const auto end = reinterpret_cast<std::uintptr_t>(block->mapping) + block->mapped_size;
     if (address >= start && address < end) {
       return block.get();
@@ -179,7 +179,7 @@ SharedBufferBlock * SharedBufferMemoryPool::find_block_for_ptr(const void * ptr)
   return nullptr;
 }
 
-bool SharedBufferMemoryPool::try_claim_block(SharedBufferBlock * block) const
+bool ShmemBufferMemoryPool::try_claim_block(ShmemBufferBlock * block) const
 {
   if (block == nullptr || block->control == nullptr) {
     return false;
@@ -187,37 +187,37 @@ bool SharedBufferMemoryPool::try_claim_block(SharedBufferBlock * block) const
   const auto published = block->control->publish_timestamp_us.load(std::memory_order_acquire);
   if (published != 0) {
     const auto now = monotonic_time_us();
-    if (now < published || (now - published) < kSharedBufferGracePeriodUs) {
+    if (now < published || (now - published) < kShmemBufferGracePeriodUs) {
       return false;
     }
   }
   return try_claim_shmem_buffer_reuse(block->control);
 }
 
-SharedBufferBlock * SharedBufferMemoryPool::create_block(std::size_t payload_size)
+ShmemBufferBlock * ShmemBufferMemoryPool::create_block(std::size_t payload_size)
 {
-  if (payload_size > std::numeric_limits<std::size_t>::max() - kSharedBufferPayloadOffset) {
+  if (payload_size > std::numeric_limits<std::size_t>::max() - kShmemBufferPayloadOffset) {
     throw std::length_error("shared buffer mapping size overflows size_t");
   }
-  const std::size_t mapped_size = kSharedBufferPayloadOffset + payload_size;
+  const std::size_t mapped_size = kShmemBufferPayloadOffset + payload_size;
   const std::uint32_t block_id = next_block_id_++;
   const auto platform_mapping = create_platform_mapping(mapped_size, block_id, uid_dist_(uid_rng_));
 
   try {
-    auto block = std::make_unique<SharedBufferBlock>();
+    auto block = std::make_unique<ShmemBufferBlock>();
     block->native_handle = platform_mapping.native_handle;
     block->mapping = platform_mapping.mapping;
     block->mapped_size = platform_mapping.mapped_size;
     block->payload_size = payload_size;
     block->block_id = block_id;
     block->socket_path = platform_mapping.ipc_name;
-    block->control = new (platform_mapping.mapping) SharedBufferControlHeader();
+    block->control = new (platform_mapping.mapping) ShmemBufferControlHeader();
     block->control->payload_size = payload_size;
     block->control->ipc_uid.store(0, std::memory_order_relaxed);
     block->control->reader_state.store(0, std::memory_order_relaxed);
     block->control->publish_timestamp_us.store(0, std::memory_order_relaxed);
 
-    SharedBufferBlock * result = block.get();
+    ShmemBufferBlock * result = block.get();
     all_blocks_.push_back(std::move(block));
     initialized_ = true;
     ipc_capable_ = true;

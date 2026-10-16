@@ -145,7 +145,7 @@ int receive_fd_from_socket(const std::string & socket_path)
 
 }  // namespace
 
-struct SharedBufferFdBroker::Impl
+struct ShmemBufferFdBroker::Impl
 {
   struct FDDispatcher
   {
@@ -313,10 +313,10 @@ private:
   std::mutex mutex;
 };
 
-SharedBufferFdBroker::SharedBufferFdBroker()
+ShmemBufferFdBroker::ShmemBufferFdBroker()
 : impl_(std::make_unique<Impl>()) {}
 
-SharedBufferFdBroker::~SharedBufferFdBroker()
+ShmemBufferFdBroker::~ShmemBufferFdBroker()
 {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   for (const auto & item : impl_->registered_blocks) {
@@ -328,7 +328,7 @@ SharedBufferFdBroker::~SharedBufferFdBroker()
   impl_->registered_blocks.clear();
 }
 
-std::string SharedBufferFdBroker::register_block(SharedBufferBlock * block)
+std::string ShmemBufferFdBroker::register_block(ShmemBufferBlock * block)
 {
   if (block == nullptr || block->native_handle < 0 || impl_->dispatcher == nullptr) {
     return {};
@@ -361,7 +361,7 @@ std::string SharedBufferFdBroker::register_block(SharedBufferBlock * block)
   return path;
 }
 
-SharedBufferPlatformMapping create_platform_mapping(
+ShmemBufferPlatformMapping create_platform_mapping(
   std::size_t mapped_size, std::uint32_t, std::uint64_t)
 {
   if (mapped_size > static_cast<std::size_t>(std::numeric_limits<off_t>::max())) {
@@ -384,10 +384,10 @@ SharedBufferPlatformMapping create_platform_mapping(
     close(fd);
     throw std::runtime_error("mmap for shared-memory mapping failed: " + message);
   }
-  return SharedBufferPlatformMapping{fd, mapping, mapped_size, {}};
+  return ShmemBufferPlatformMapping{fd, mapping, mapped_size, {}};
 }
 
-SharedBufferPlatformMapping import_platform_mapping(
+ShmemBufferPlatformMapping import_platform_mapping(
   const std::string & ipc_name,
   std::size_t mapped_size)
 {
@@ -408,7 +408,7 @@ SharedBufferPlatformMapping import_platform_mapping(
     close(fd);
     throw std::runtime_error("failed to map received shared-memory FD: " + message);
   }
-  return SharedBufferPlatformMapping{fd, mapping, mapped_size, ipc_name};
+  return ShmemBufferPlatformMapping{fd, mapping, mapped_size, ipc_name};
 }
 
 void destroy_platform_mapping(

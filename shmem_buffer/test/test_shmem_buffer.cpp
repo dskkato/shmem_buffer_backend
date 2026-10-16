@@ -34,9 +34,9 @@
 namespace
 {
 
-TEST(SharedBufferTest, ReuseClaimSynchronizesReaderAcquisition)
+TEST(ShmemBufferTest, ReuseClaimSynchronizesReaderAcquisition)
 {
-  shmem_buffer::SharedBufferControlHeader control;
+  shmem_buffer::ShmemBufferControlHeader control;
 
   EXPECT_TRUE(shmem_buffer::try_acquire_shmem_buffer_reader(&control));
   EXPECT_FALSE(shmem_buffer::try_claim_shmem_buffer_reuse(&control));
@@ -44,7 +44,7 @@ TEST(SharedBufferTest, ReuseClaimSynchronizesReaderAcquisition)
 
   EXPECT_TRUE(shmem_buffer::try_claim_shmem_buffer_reuse(&control));
   EXPECT_EQ(
-    shmem_buffer::kSharedBufferReuseClaimed, control.reader_state.load(std::memory_order_acquire));
+    shmem_buffer::kShmemBufferReuseClaimed, control.reader_state.load(std::memory_order_acquire));
   EXPECT_FALSE(shmem_buffer::try_acquire_shmem_buffer_reader(&control));
 
   control.ipc_uid.store(42, std::memory_order_release);
@@ -55,28 +55,28 @@ TEST(SharedBufferTest, ReuseClaimSynchronizesReaderAcquisition)
   EXPECT_EQ(0u, control.reader_state.load(std::memory_order_acquire));
 }
 
-TEST(SharedBufferTest, ControlHeaderDescribesFixedMappingLayout)
+TEST(ShmemBufferTest, ControlHeaderDescribesFixedMappingLayout)
 {
-  auto pool = std::make_shared<shmem_buffer::SharedBufferMemoryPool>();
+  auto pool = std::make_shared<shmem_buffer::ShmemBufferMemoryPool>();
   auto * block = pool->allocate(32);
   ASSERT_NE(nullptr, block);
   ASSERT_NE(nullptr, block->control);
 
   EXPECT_EQ(0u, block->control->ipc_uid.load(std::memory_order_acquire));
-  EXPECT_EQ(shmem_buffer::kSharedBufferControlMagic, block->control->magic);
-  EXPECT_EQ(shmem_buffer::kSharedBufferControlAbiVersion, block->control->abi_version);
+  EXPECT_EQ(shmem_buffer::kShmemBufferControlMagic, block->control->magic);
+  EXPECT_EQ(shmem_buffer::kShmemBufferControlAbiVersion, block->control->abi_version);
   EXPECT_EQ(32u, block->control->payload_size);
-  EXPECT_EQ(shmem_buffer::kSharedBufferPayloadOffset + 32u, block->mapped_size);
+  EXPECT_EQ(shmem_buffer::kShmemBufferPayloadOffset + 32u, block->mapped_size);
   EXPECT_EQ(0u, reinterpret_cast<std::uintptr_t>(block->mapping) % 64u);
   EXPECT_EQ(
     0u,
-    (reinterpret_cast<std::uintptr_t>(block->mapping) + shmem_buffer::kSharedBufferPayloadOffset) %
+    (reinterpret_cast<std::uintptr_t>(block->mapping) + shmem_buffer::kShmemBufferPayloadOffset) %
       64u);
 
   pool->free(block);
 }
 
-TEST(SharedBufferTest, AllocateWriteReadAndCpuCopy)
+TEST(ShmemBufferTest, AllocateWriteReadAndCpuCopy)
 {
   auto buffer = shmem_buffer::allocate_buffer(64);
   {
@@ -99,7 +99,7 @@ TEST(SharedBufferTest, AllocateWriteReadAndCpuCopy)
   EXPECT_EQ(70u, cpu.back());
 }
 
-TEST(SharedBufferTest, PromotesCpuInputBuffer)
+TEST(ShmemBufferTest, PromotesCpuInputBuffer)
 {
   rosidl::Buffer<std::uint8_t> cpu(8);
   for (std::size_t i = 0; i < cpu.size(); ++i) {
@@ -113,13 +113,13 @@ TEST(SharedBufferTest, PromotesCpuInputBuffer)
   EXPECT_EQ(0xA7, read.get_ptr()[7]);
 }
 
-TEST(SharedBufferTest, RejectsNonSharedBufferOutputBuffer)
+TEST(ShmemBufferTest, RejectsNonShmemBufferOutputBuffer)
 {
   rosidl::Buffer<std::uint8_t> cpu(8);
-  EXPECT_THROW(shmem_buffer::from_output_buffer(cpu), shmem_buffer::SharedBufferError);
+  EXPECT_THROW(shmem_buffer::from_output_buffer(cpu), shmem_buffer::ShmemBufferError);
 }
 
-TEST(SharedBufferTest, RejectsConcurrentAndFinalizedWriters)
+TEST(ShmemBufferTest, RejectsConcurrentAndFinalizedWriters)
 {
   auto buffer = shmem_buffer::allocate_buffer(8);
   auto first = shmem_buffer::from_output_buffer(buffer);
@@ -128,7 +128,7 @@ TEST(SharedBufferTest, RejectsConcurrentAndFinalizedWriters)
   EXPECT_THROW(shmem_buffer::from_output_buffer(buffer), std::runtime_error);
 }
 
-TEST(SharedBufferTest, ReadHandleDoesNotImplicitlyFinalizeWriter)
+TEST(ShmemBufferTest, ReadHandleDoesNotImplicitlyFinalizeWriter)
 {
   auto buffer = shmem_buffer::allocate_buffer(8);
   auto write = shmem_buffer::from_output_buffer(buffer);
@@ -137,7 +137,7 @@ TEST(SharedBufferTest, ReadHandleDoesNotImplicitlyFinalizeWriter)
   EXPECT_THROW(shmem_buffer::from_input_buffer(const_buffer), std::runtime_error);
 }
 
-TEST(SharedBufferTest, WriterAndReaderAccessAreMutuallyExclusive)
+TEST(ShmemBufferTest, WriterAndReaderAccessAreMutuallyExclusive)
 {
   auto buffer = shmem_buffer::allocate_buffer(8);
   const auto & const_buffer = buffer;
@@ -149,7 +149,7 @@ TEST(SharedBufferTest, WriterAndReaderAccessAreMutuallyExclusive)
   EXPECT_NO_THROW(shmem_buffer::from_output_buffer(buffer));
 }
 
-TEST(SharedBufferTest, MultipleReadHandlesAreAllowed)
+TEST(ShmemBufferTest, MultipleReadHandlesAreAllowed)
 {
   auto buffer = shmem_buffer::allocate_buffer(8);
   const auto & const_buffer = buffer;
@@ -165,14 +165,14 @@ TEST(SharedBufferTest, MultipleReadHandlesAreAllowed)
   EXPECT_NO_THROW(shmem_buffer::from_output_buffer(buffer));
 }
 
-TEST(SharedBufferTest, ExplicitFinalizeAllowsReadWhileWriteHandleLives)
+TEST(ShmemBufferTest, ExplicitFinalizeAllowsReadWhileWriteHandleLives)
 {
   auto buffer = shmem_buffer::allocate_buffer(8);
   auto write = shmem_buffer::from_output_buffer(buffer);
   write.get_ptr()[0] = 0x5A;
 
   auto * impl =
-    dynamic_cast<shmem_buffer::SharedBufferImpl<std::uint8_t> *>(buffer.get_impl());
+    dynamic_cast<shmem_buffer::ShmemBufferImpl<std::uint8_t> *>(buffer.get_impl());
   ASSERT_NE(nullptr, impl);
   impl->get_shmem_buffer().finalize_write_handle();
 
@@ -181,19 +181,19 @@ TEST(SharedBufferTest, ExplicitFinalizeAllowsReadWhileWriteHandleLives)
   EXPECT_EQ(0x5A, read.get_ptr()[0]);
 }
 
-TEST(SharedBufferTest, RejectsWritersForReadOnlyBuffer)
+TEST(ShmemBufferTest, RejectsWritersForReadOnlyBuffer)
 {
   std::uint8_t payload[8]{};
-  shmem_buffer::SharedBuffer buffer(
+  shmem_buffer::ShmemBuffer buffer(
     payload, sizeof(payload), [](std::uint8_t *) {}, nullptr, nullptr, 0, 0, false);
 
   EXPECT_FALSE(buffer.writable());
   EXPECT_THROW(buffer.get_write_handle(), std::runtime_error);
 }
 
-TEST(SharedBufferTest, PoolUsesSizeBucketsAndReaderProtection)
+TEST(ShmemBufferTest, PoolUsesSizeBucketsAndReaderProtection)
 {
-  auto pool = std::make_shared<shmem_buffer::SharedBufferMemoryPool>();
+  auto pool = std::make_shared<shmem_buffer::ShmemBufferMemoryPool>();
   auto * first = pool->allocate(32);
   auto * different = pool->allocate(64);
   ASSERT_NE(first, different);
@@ -206,11 +206,11 @@ TEST(SharedBufferTest, PoolUsesSizeBucketsAndReaderProtection)
 }
 
 #ifdef _WIN32
-TEST(SharedBufferTest, NamedMappingIsRemovedAfterLastHandleCloses)
+TEST(ShmemBufferTest, NamedMappingIsRemovedAfterLastHandleCloses)
 {
   std::string mapping_name;
   {
-    auto pool = std::make_shared<shmem_buffer::SharedBufferMemoryPool>();
+    auto pool = std::make_shared<shmem_buffer::ShmemBufferMemoryPool>();
     auto * block = pool->allocate(32);
     ASSERT_NE(nullptr, block);
     ASSERT_FALSE(block->socket_path.empty());

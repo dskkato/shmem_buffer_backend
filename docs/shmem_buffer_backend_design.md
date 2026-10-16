@@ -37,25 +37,25 @@ flowchart LR
   Plugin -->|"create_descriptor"| Descriptor["ShmemBufferDescriptor<br/>(pid, block_id, size, socket, ipc_uid)"]
   Descriptor -->|"published over RMW"| Sub
 
-  Plugin -.->|"shared-memory allocations"| Pool[SharedBufferMemoryPool]
-  Plugin -.->|"platform IPC transport"| Broker[SharedBufferFdBroker]
+  Plugin -.->|"shared-memory allocations"| Pool[ShmemBufferMemoryPool]
+  Plugin -.->|"platform IPC transport"| Broker[ShmemBufferFdBroker]
   Pool -.->|"shared control header"| Control["readers / uid / timestamp"]
 ```
 
 The implementation is divided into four responsibilities:
 
-- `SharedBufferMemoryPool` owns publisher-side blocks. It groups reusable blocks by
+- `ShmemBufferMemoryPool` owns publisher-side blocks. It groups reusable blocks by
   payload size and keeps each block's native handle, mapping, stable block ID,
   control header, and platform IPC identity together.
-- `SharedBufferFdBroker` exposes the block's platform IPC identity. On Linux it uses a
+- `ShmemBufferFdBroker` exposes the block's platform IPC identity. On Linux it uses a
   private Unix-domain socket and sends the live memfd with `SCM_RIGHTS`; on
   Windows it returns the named file-mapping object. The server is reusable:
   every cache miss may request the same backing object, and no per-message
   lease token is required.
-- `SharedBufferHandleCache` owns imported mappings and their native handles in the
+- `ShmemBufferHandleCache` owns imported mappings and their native handles in the
   subscriber process. A cache hit reuses the existing mapping and does not
   perform another FD transfer or named-object open.
-- `SharedBufferBackend` integrates the storage layer with the
+- `ShmemBufferBackend` integrates the storage layer with the
   `rosidl::BufferBackend` plugin interface, performs endpoint capability
   decisions, creates descriptors, imports descriptors, and selects CPU
   fallback when necessary.
@@ -75,7 +75,7 @@ after the last mapping handle is closed.
 sequenceDiagram
   autonumber
   participant Pub as Publisher
-  participant Pool as SharedBufferMemoryPool
+  participant Pool as ShmemBufferMemoryPool
   participant Broker as FD broker
   participant Sub as Subscriber
   participant Cache as Subscriber import cache
@@ -112,7 +112,7 @@ not weaken stale-message detection.
 A relay can subscribe to a shared-buffer-backed message, construct another
 message instance, and publish it without copying its payload. The relay's
 buffer is an imported view, not a block in the relay process's
-`SharedBufferMemoryPool`:
+`ShmemBufferMemoryPool`:
 
 ```mermaid
 sequenceDiagram
@@ -132,7 +132,7 @@ On the relay path, `create_descriptor_with_endpoint()` validates the imported
 mapping's control header and UID, then forwards the saved source identity. It
 does not call `register_block_for_ipc()` and it does not call
 `mark_published()`, because the relay does not own the source block. The
-reader reference held by the imported `SharedBuffer` prevents the source pool
+reader reference held by the imported `ShmemBuffer` prevents the source pool
 from claiming that block for reuse while the relay is using the message. A
 downstream import acquires its own reader reference, so multiple fan-out or
 relay consumers are compatible with the slot lifecycle.
@@ -269,7 +269,7 @@ be confused with POSIX named shared memory.
 
 ## Memory pool and block lifetime
 
-Each `SharedBufferBlock` contains:
+Each `ShmemBufferBlock` contains:
 
 - one native FD/HANDLE and one publisher-side shared mapping;
 - a stable process-local `shmem_buffer_block_id`;
@@ -343,13 +343,13 @@ while the memfd reference count handles final object cleanup.
 ## Shared buffer state machine
 
 The write lifecycle and local access exclusion are tracked by process-local
-state in `SharedBufferImpl`. This state is not stored in the shared memfd
+state in `ShmemBufferImpl`. This state is not stored in the shared memfd
 control header and is never observed by the subscriber. Its purpose is to
 ensure that the backend cannot create a descriptor before the write is
 finalized, and that a local writer and local readers do not access the payload
 at the same time. The shared control header has a separate reader count for
 protecting pool-block reuse across processes; the process-local reader count
-in `HandleState` protects only access through this `SharedBuffer` instance.
+in `HandleState` protects only access through this `ShmemBuffer` instance.
 Finalization may happen explicitly during descriptor creation while a
 `WriteHandle` is still alive, or from the handle destructor as the normal RAII
 fallback.
@@ -445,7 +445,7 @@ transport path.
 
 ## Subscriber import cache and lifetime
 
-`SharedBufferHandleCache` stores an imported region containing:
+`ShmemBufferHandleCache` stores an imported region containing:
 
 - the received memfd FD or opened Windows mapping HANDLE;
 - the `mmap()`/`MapViewOfFile()` base and total mapping size;

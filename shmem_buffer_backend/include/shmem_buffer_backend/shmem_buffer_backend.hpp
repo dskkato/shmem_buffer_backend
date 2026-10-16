@@ -32,11 +32,11 @@
 namespace shmem_buffer
 {
 
-class SharedBufferBackend : public rosidl::BufferBackend
+class ShmemBufferBackend : public rosidl::BufferBackend
 {
 public:
-  SharedBufferBackend();
-  ~SharedBufferBackend() override = default;
+  ShmemBufferBackend();
+  ~ShmemBufferBackend() override = default;
 
   std::string get_backend_type() const override {return "shmem_buffer";}
 

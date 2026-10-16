@@ -27,7 +27,7 @@ namespace shmem_buffer
 /// The native handle is an fd on Linux and a HANDLE represented as an
 /// intptr_t on Windows.  Keeping this type platform-neutral prevents the
 /// memory-pool and cache code from depending on either platform's headers.
-struct SharedBufferPlatformMapping
+struct ShmemBufferPlatformMapping
 {
   std::intptr_t native_handle{-1};
   void * mapping{nullptr};
@@ -35,10 +35,10 @@ struct SharedBufferPlatformMapping
   std::string ipc_name;
 };
 
-SharedBufferPlatformMapping create_platform_mapping(
+ShmemBufferPlatformMapping create_platform_mapping(
   std::size_t mapped_size, std::uint32_t block_id, std::uint64_t nonce);
 
-SharedBufferPlatformMapping import_platform_mapping(
+ShmemBufferPlatformMapping import_platform_mapping(
   const std::string & ipc_name, std::size_t mapped_size);
 
 void destroy_platform_mapping(

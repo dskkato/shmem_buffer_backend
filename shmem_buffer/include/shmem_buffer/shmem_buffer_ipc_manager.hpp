@@ -31,16 +31,16 @@ namespace shmem_buffer
 /// Linux publishes an fd through a Unix-domain socket. Windows publishes the
 /// name of the file-mapping object. The implementation is selected by CMake;
 /// callers do not need to know which transport is active.
-class SHMEM_BUFFER_PUBLIC SharedBufferFdBroker
+class SHMEM_BUFFER_PUBLIC ShmemBufferFdBroker
 {
 public:
-  SharedBufferFdBroker();
-  ~SharedBufferFdBroker();
+  ShmemBufferFdBroker();
+  ~ShmemBufferFdBroker();
 
-  SharedBufferFdBroker(const SharedBufferFdBroker &) = delete;
-  SharedBufferFdBroker & operator=(const SharedBufferFdBroker &) = delete;
+  ShmemBufferFdBroker(const ShmemBufferFdBroker &) = delete;
+  ShmemBufferFdBroker & operator=(const ShmemBufferFdBroker &) = delete;
 
-  std::string register_block(SharedBufferBlock * block);
+  std::string register_block(ShmemBufferBlock * block);
 
 private:
   struct Impl;
@@ -48,17 +48,17 @@ private:
 };
 
 /// One received and mapped physical block in the subscriber process.
-class SHMEM_BUFFER_PUBLIC SharedBufferImportedBlock
+class SHMEM_BUFFER_PUBLIC ShmemBufferImportedBlock
 {
 public:
-  SharedBufferImportedBlock(
+  ShmemBufferImportedBlock(
     std::intptr_t native_handle, void * mapping, std::size_t mapped_size, std::string ipc_name);
-  ~SharedBufferImportedBlock();
+  ~ShmemBufferImportedBlock();
 
-  SharedBufferImportedBlock(const SharedBufferImportedBlock &) = delete;
-  SharedBufferImportedBlock & operator=(const SharedBufferImportedBlock &) = delete;
+  ShmemBufferImportedBlock(const ShmemBufferImportedBlock &) = delete;
+  ShmemBufferImportedBlock & operator=(const ShmemBufferImportedBlock &) = delete;
 
-  SharedBufferControlHeader * control() const {return control_;}
+  ShmemBufferControlHeader * control() const {return control_;}
   std::uint8_t * payload() const;
   std::size_t mapped_size() const {return mapped_size_;}
 
@@ -69,22 +69,22 @@ private:
   std::intptr_t native_handle_{-1};
   void * mapping_{nullptr};
   std::size_t mapped_size_{0};
-  SharedBufferControlHeader * control_{nullptr};
+  ShmemBufferControlHeader * control_{nullptr};
   std::string ipc_name_;
 };
 
 /// Process-local cache for imported Linux shared-memory or Windows named mappings.
 /// The cache key is the physical block identity, not the publication UID.
-class SHMEM_BUFFER_PUBLIC SharedBufferHandleCache
+class SHMEM_BUFFER_PUBLIC ShmemBufferHandleCache
 {
 public:
-  static std::shared_ptr<SharedBufferImportedBlock> import_block(
+  static std::shared_ptr<ShmemBufferImportedBlock> import_block(
     const std::string & ipc_name, std::int32_t pid, std::uint32_t block_id,
     std::uint64_t mapped_size, std::uint64_t payload_size, std::uint64_t expected_uid);
 
 private:
   static void validate(
-    const SharedBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
+    const ShmemBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
     std::uint64_t expected_uid);
 };
 

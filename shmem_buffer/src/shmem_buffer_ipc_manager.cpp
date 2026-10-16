@@ -52,7 +52,7 @@ struct CacheKeyHash
   }
 };
 
-using CacheMap = std::unordered_map<CacheKey, std::shared_ptr<SharedBufferImportedBlock>,
+using CacheMap = std::unordered_map<CacheKey, std::shared_ptr<ShmemBufferImportedBlock>,
     CacheKeyHash>;
 
 CacheMap & cache()
@@ -68,19 +68,19 @@ std::mutex & cache_mutex()
 }
 
 void validate_mapping(
-  const SharedBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
+  const ShmemBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
   std::uint64_t expected_uid)
 {
-  const SharedBufferControlHeader * control = block.control();
+  const ShmemBufferControlHeader * control = block.control();
   if (
     control == nullptr || mapped_size != block.mapped_size() ||
-    mapped_size < kSharedBufferPayloadOffset ||
-    payload_size > mapped_size - kSharedBufferPayloadOffset)
+    mapped_size < kShmemBufferPayloadOffset ||
+    payload_size > mapped_size - kShmemBufferPayloadOffset)
   {
     throw std::runtime_error("invalid shared memory mapping size");
   }
-  if (control->magic != kSharedBufferControlMagic ||
-    control->abi_version != kSharedBufferControlAbiVersion)
+  if (control->magic != kShmemBufferControlMagic ||
+    control->abi_version != kShmemBufferControlAbiVersion)
   {
     throw std::runtime_error("shared memory control header ABI mismatch");
   }
@@ -97,27 +97,27 @@ void validate_mapping(
 
 }  // namespace
 
-SharedBufferImportedBlock::SharedBufferImportedBlock(
+ShmemBufferImportedBlock::ShmemBufferImportedBlock(
   std::intptr_t native_handle, void * mapping, std::size_t mapped_size, std::string ipc_name)
 : native_handle_(native_handle),
   mapping_(mapping),
   mapped_size_(mapped_size),
-  control_(static_cast<SharedBufferControlHeader *>(mapping)),
+  control_(static_cast<ShmemBufferControlHeader *>(mapping)),
   ipc_name_(std::move(ipc_name))
 {
 }
 
-SharedBufferImportedBlock::~SharedBufferImportedBlock()
+ShmemBufferImportedBlock::~ShmemBufferImportedBlock()
 {
   destroy_platform_mapping(native_handle_, mapping_, mapped_size_);
 }
 
-std::uint8_t * SharedBufferImportedBlock::payload() const
+std::uint8_t * ShmemBufferImportedBlock::payload() const
 {
-  return reinterpret_cast<std::uint8_t *>(mapping_) + kSharedBufferPayloadOffset;
+  return reinterpret_cast<std::uint8_t *>(mapping_) + kShmemBufferPayloadOffset;
 }
 
-void SharedBufferImportedBlock::acquire_reader()
+void ShmemBufferImportedBlock::acquire_reader()
 {
   if (control_ == nullptr) {
     throw std::runtime_error("cannot acquire a reader for unmapped shared memory");
@@ -127,26 +127,26 @@ void SharedBufferImportedBlock::acquire_reader()
   }
 }
 
-void SharedBufferImportedBlock::release_reader() noexcept
+void ShmemBufferImportedBlock::release_reader() noexcept
 {
   if (control_ != nullptr) {
     release_shmem_buffer_reader(control_);
   }
 }
 
-void SharedBufferHandleCache::validate(
-  const SharedBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
+void ShmemBufferHandleCache::validate(
+  const ShmemBufferImportedBlock & block, std::uint64_t mapped_size, std::uint64_t payload_size,
   std::uint64_t expected_uid)
 {
   validate_mapping(block, mapped_size, payload_size, expected_uid);
 }
 
-std::shared_ptr<SharedBufferImportedBlock> SharedBufferHandleCache::import_block(
+std::shared_ptr<ShmemBufferImportedBlock> ShmemBufferHandleCache::import_block(
   const std::string & ipc_name, std::int32_t pid, std::uint32_t block_id,
   std::uint64_t mapped_size, std::uint64_t payload_size, std::uint64_t expected_uid)
 {
   if (
-    ipc_name.empty() || mapped_size < kSharedBufferPayloadOffset ||
+    ipc_name.empty() || mapped_size < kShmemBufferPayloadOffset ||
     mapped_size > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
   {
     throw std::runtime_error("invalid shared memory descriptor metadata");
@@ -162,9 +162,9 @@ std::shared_ptr<SharedBufferImportedBlock> SharedBufferHandleCache::import_block
 
   const auto platform_mapping = import_platform_mapping(
     ipc_name, static_cast<std::size_t>(mapped_size));
-  std::shared_ptr<SharedBufferImportedBlock> imported;
+  std::shared_ptr<ShmemBufferImportedBlock> imported;
   try {
-    imported = std::make_shared<SharedBufferImportedBlock>(
+    imported = std::make_shared<ShmemBufferImportedBlock>(
       platform_mapping.native_handle, platform_mapping.mapping, platform_mapping.mapped_size,
       ipc_name);
   } catch (...) {

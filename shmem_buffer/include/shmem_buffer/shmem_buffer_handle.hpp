@@ -27,7 +27,7 @@
 namespace shmem_buffer
 {
 
-class SharedBuffer;
+class ShmemBuffer;
 
 struct HandleState
 {
@@ -73,7 +73,7 @@ public:
   }
 
 private:
-  friend class SharedBuffer;
+  friend class ShmemBuffer;
 
   ReadHandle(
     const std::uint8_t * data_ptr, std::shared_ptr<void> reader_lease, std::shared_ptr<void> owner,
@@ -92,7 +92,7 @@ private:
 ///
 /// Only one writer can be active, and a writer cannot be acquired while a
 /// local ReadHandle is alive. Destruction finalizes the local write state
-/// idempotently. After explicit finalization through SharedBuffer, the caller
+/// idempotently. After explicit finalization through ShmemBuffer, the caller
 /// must not use this handle's mutable pointer again.
 class SHMEM_BUFFER_PUBLIC WriteHandle
 {
@@ -118,7 +118,7 @@ public:
   }
 
 private:
-  friend class SharedBuffer;
+  friend class ShmemBuffer;
 
   WriteHandle(
     std::uint8_t * data_ptr, std::shared_ptr<HandleState> state, std::shared_ptr<void> owner);

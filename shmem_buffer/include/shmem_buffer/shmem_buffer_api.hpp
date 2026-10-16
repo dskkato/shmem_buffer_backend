@@ -37,7 +37,7 @@ namespace shmem_buffer
 /// convention.
 inline rosidl::Buffer<std::uint8_t> allocate_buffer(std::size_t count)
 {
-  return rosidl::Buffer<std::uint8_t>(std::make_unique<SharedBufferImpl<std::uint8_t>>(count));
+  return rosidl::Buffer<std::uint8_t>(std::make_unique<ShmemBufferImpl<std::uint8_t>>(count));
 }
 
 namespace detail
@@ -48,13 +48,13 @@ inline std::shared_ptr<rosidl::Buffer<std::uint8_t>> allocate_shmem_buffer_share
   std::size_t byte_count)
 {
   return std::make_shared<rosidl::Buffer<std::uint8_t>>(
-    std::make_unique<SharedBufferImpl<std::uint8_t>>(byte_count));
+    std::make_unique<ShmemBufferImpl<std::uint8_t>>(byte_count));
 }
 
 template<typename T>
-inline SharedBufferImpl<T> * shmem_buffer_impl_of(rosidl::Buffer<T> & buffer)
+inline ShmemBufferImpl<T> * shmem_buffer_impl_of(rosidl::Buffer<T> & buffer)
 {
-  return dynamic_cast<SharedBufferImpl<T> *>(buffer.get_impl());
+  return dynamic_cast<ShmemBufferImpl<T> *>(buffer.get_impl());
 }
 
 }  // namespace detail
@@ -71,15 +71,15 @@ WriteHandle from_output_buffer(rosidl::Buffer<T> & buffer)
 {
   auto * impl = buffer.get_impl();
   if (impl == nullptr) {
-    throw SharedBufferError("from_output_buffer called with null buffer implementation");
+    throw ShmemBufferError("from_output_buffer called with null buffer implementation");
   }
   if (buffer.size() == 0) {
-    throw SharedBufferError("from_output_buffer called on empty buffer");
+    throw ShmemBufferError("from_output_buffer called on empty buffer");
   }
 
-  auto * shmem_buffer_impl = dynamic_cast<SharedBufferImpl<T> *>(impl);
+  auto * shmem_buffer_impl = dynamic_cast<ShmemBufferImpl<T> *>(impl);
   if (shmem_buffer_impl == nullptr) {
-    throw SharedBufferError("from_output_buffer requires a shared-memory-backed buffer");
+    throw ShmemBufferError("from_output_buffer requires a shared-memory-backed buffer");
   }
   return shmem_buffer_impl->get_shmem_buffer().get_write_handle();
 }
@@ -95,18 +95,18 @@ ReadHandle from_input_buffer(const rosidl::Buffer<T> & buffer)
 {
   const auto * impl = buffer.get_impl();
   if (impl == nullptr) {
-    throw SharedBufferError("from_input_buffer called with null buffer implementation");
+    throw ShmemBufferError("from_input_buffer called with null buffer implementation");
   }
   if (buffer.size() == 0) {
-    throw SharedBufferError("from_input_buffer called on empty buffer");
+    throw ShmemBufferError("from_input_buffer called on empty buffer");
   }
 
-  if (const auto * shmem_buffer_impl = dynamic_cast<const SharedBufferImpl<T> *>(impl)) {
+  if (const auto * shmem_buffer_impl = dynamic_cast<const ShmemBufferImpl<T> *>(impl)) {
     return shmem_buffer_impl->get_shmem_buffer().get_read_handle();
   }
 
   if (buffer.size() > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
-    throw SharedBufferError("input buffer size overflows size_t");
+    throw ShmemBufferError("input buffer size overflows size_t");
   }
   const std::size_t bytes = buffer.size() * sizeof(T);
   auto promoted = detail::allocate_shmem_buffer_shared(bytes);

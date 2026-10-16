@@ -37,16 +37,16 @@ std::wstring widen_ascii(const std::string & value)
 
 }  // namespace
 
-struct SharedBufferFdBroker::Impl
+struct ShmemBufferFdBroker::Impl
 {
 };
 
-SharedBufferFdBroker::SharedBufferFdBroker()
+ShmemBufferFdBroker::ShmemBufferFdBroker()
 : impl_(std::make_unique<Impl>()) {}
 
-SharedBufferFdBroker::~SharedBufferFdBroker() = default;
+ShmemBufferFdBroker::~ShmemBufferFdBroker() = default;
 
-std::string SharedBufferFdBroker::register_block(SharedBufferBlock * block)
+std::string ShmemBufferFdBroker::register_block(ShmemBufferBlock * block)
 {
   if (block == nullptr || block->native_handle < 0) {
     return {};
@@ -54,7 +54,7 @@ std::string SharedBufferFdBroker::register_block(SharedBufferBlock * block)
   return block->socket_path;
 }
 
-SharedBufferPlatformMapping create_platform_mapping(
+ShmemBufferPlatformMapping create_platform_mapping(
   std::size_t mapped_size, std::uint32_t block_id, std::uint64_t nonce)
 {
   const auto size = static_cast<std::uint64_t>(mapped_size);
@@ -96,11 +96,11 @@ SharedBufferPlatformMapping create_platform_mapping(
     (void)CloseHandle(mapping_handle);
     throw std::runtime_error("MapViewOfFile failed: Windows error " + std::to_string(error));
   }
-  return SharedBufferPlatformMapping{
+  return ShmemBufferPlatformMapping{
     reinterpret_cast<std::intptr_t>(mapping_handle), mapping, mapped_size, mapping_name};
 }
 
-SharedBufferPlatformMapping import_platform_mapping(
+ShmemBufferPlatformMapping import_platform_mapping(
   const std::string & ipc_name,
   std::size_t mapped_size)
 {
@@ -116,7 +116,7 @@ SharedBufferPlatformMapping import_platform_mapping(
     (void)CloseHandle(mapping_handle);
     throw std::runtime_error("MapViewOfFile failed: Windows error " + std::to_string(error));
   }
-  return SharedBufferPlatformMapping{
+  return ShmemBufferPlatformMapping{
     reinterpret_cast<std::intptr_t>(mapping_handle), mapping, mapped_size, ipc_name};
 }
 
