@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>shmem_buffer_backend</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>Pluginlib backend for shared-memory rosidl::Buffer transport.</description>
 
   <maintainer email="kato.daisuke429@gmail.com">dskkato</maintainer>

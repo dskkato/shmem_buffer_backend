@@ -2,6 +2,10 @@
 Changelog for package shmem_buffer_backend_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.1 (2026-11-27)
+------------------
+* Prepare 0.1.1 release.
+
 0.1.0 (2026-09-27)
 ------------------
 * Initial release.
